@@ -28,6 +28,7 @@
     "youtube-ext": "^1.1.25",
     "youtube-transcript": "^1.2.1",
     "youtube-transcript-api": "^3.0.6",
+    "yt-transcript": "^0.0.2",
     "ytdl-core": "^4.11.5"
   },
   "devDependencies": {
