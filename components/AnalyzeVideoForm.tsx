@@ -20,63 +20,54 @@ export function AnalyzeVideoForm() {
     setError(null)
 
     try {
-      // 1. Fetch Transcript
-      const tRes = await fetch('/api/analyze/transcript', {
-        method: 'POST', body: JSON.stringify({ url }), headers: { 'Content-Type': 'application/json' }
-      })
-      if (!tRes.ok) {
-        const errorData = await tRes.json().catch(() => ({ error: "Failed to fetch transcript" }))
-        throw new Error(errorData.error || "Failed to fetch transcript")
+      // 1. Fetch Transcript and Basic Info
+      setStatus('fetching_transcript');
+      const analyzeRes = await fetch('/api/analyze-video', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ youtube_url: url })
+      });
+      
+      if (!analyzeRes.ok) {
+        const errorData = await analyzeRes.json();
+        throw new Error(errorData.error || "Failed to analyze video");
       }
-      const tData = await tRes.json()
-      setTranscriptLen(tData.transcript.length)
+      
+      const { video, status: videoStatus } = await analyzeRes.json();
+      const videoId = video.id;
+
+      if (videoStatus === 'cached' && video.podcast_audio_url) {
+        setStatus('done');
+        router.push(`/video/${videoId}`);
+        return;
+      }
 
       // 2. Generate Summary
-      setStatus('generating_summary')
-      const sRes = await fetch('/api/analyze/summary', {
-        method: 'POST', body: JSON.stringify({ transcript: tData.transcript }), headers: { 'Content-Type': 'application/json' }
-      })
-      if (!sRes.ok) {
-        const errorData = await sRes.json().catch(() => ({ error: "Failed to generate summary" }))
-        throw new Error(errorData.error || "Failed to generate summary")
-      }
-      const sData = await sRes.json()
+      setStatus('generating_summary');
+      const summaryRes = await fetch('/api/generate-summary', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ video_id: videoId })
+      });
+
+      if (!summaryRes.ok) throw new Error("Failed to generate summary");
 
       // 3. Create Podcast
-      setStatus('creating_podcast')
-      const pRes = await fetch('/api/analyze/podcast', {
-        method: 'POST', body: JSON.stringify({ summary: sData.summary }), headers: { 'Content-Type': 'application/json' }
-      })
-      if (!pRes.ok) {
-        const errorData = await pRes.json().catch(() => ({ error: "Failed to create podcast" }))
-        throw new Error(errorData.error || "Failed to create podcast")
-      }
-      const pData = await pRes.json()
+      setStatus('creating_podcast');
+      const podcastRes = await fetch('/api/generate-podcast', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ video_id: videoId })
+      });
 
-      // 4. Save to DB
-      setStatus('saving')
-      const saveRes = await fetch('/api/analyze/save', {
-        method: 'POST', 
-        body: JSON.stringify({ 
-          url,
-          videoId: tData.videoId,
-          title: tData.title,
-          transcript: tData.transcript,
-          summary: sData.summary,
-          bulletPoints: sData.bulletPoints,
-          podcastAudioUrl: pData.podcastAudioUrl
-        }), 
-        headers: { 'Content-Type': 'application/json' }
-      })
-      if (!saveRes.ok) throw new Error("Failed to save data")
-      const saveData = await saveRes.json()
+      if (!podcastRes.ok) throw new Error("Failed to create podcast");
 
-      setStatus('done')
-      router.push(`/video/${saveData.id}`)
-      router.refresh()
+      setStatus('done');
+      router.push(`/video/${videoId}`);
+      router.refresh();
     } catch (err: any) {
-      setError(err.message || 'An error occurred during analysis.')
-      setStatus('idle')
+      setError(err.message || 'An error occurred during analysis.');
+      setStatus('idle');
     }
   }
 

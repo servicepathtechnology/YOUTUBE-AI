@@ -36,10 +36,8 @@ export function ChatTutor({ videoId, transcript }: { videoId: string, transcript
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          videoId,
-          transcript,
-          message: userMessage,
-          history: messages.map(m => ({ role: m.role, content: m.content }))
+          video_id: videoId,
+          question: userMessage,
         })
       })
 

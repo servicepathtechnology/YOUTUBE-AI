@@ -6,9 +6,11 @@ CREATE TABLE IF NOT EXISTS videos (
     video_url TEXT NOT NULL,
     video_id TEXT NOT NULL,
     title TEXT NOT NULL,
+    thumbnail TEXT,
     transcript TEXT,
     summary TEXT,
     bullet_points TEXT[],
+    key_concepts TEXT[],
     podcast_audio_url TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );

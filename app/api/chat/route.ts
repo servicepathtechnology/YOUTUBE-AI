@@ -1,57 +1,69 @@
-import { NextResponse } from 'next/server'
-import { GoogleGenerativeAI } from '@google/generative-ai'
-import { createClient } from '@/utils/supabase/server'
+import { NextResponse } from "next/server";
+import { createClient } from "@/utils/supabase/server";
+import { geminiModel } from "@/lib/gemini";
 
 export async function POST(req: Request) {
-  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "dummy")
   try {
-    const { videoId, transcript, message, history } = await req.json()
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    
+    const { video_id, question } = await req.json();
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
     if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const systemInstruction = `You are an AI tutor for a specific YouTube video. 
-Only answer based on the YouTube transcript provided below.
-If the question is unrelated to the transcript, politely remind the user that you are an AI tutor for this video.
-Limit your response output format to be concise and conversational.
+    const { data: video, error: fetchError } = await supabase
+      .from("videos")
+      .select("transcript")
+      .eq("id", video_id)
+      .single();
 
-Transcript:
-${transcript.substring(0, 15000)}`
+    if (fetchError || !video) {
+      return NextResponse.json({ error: "Video not found" }, { status: 404 });
+    }
 
-    // Map `history` from existing format to Gemini's format 
-    // `user` -> `user`, `assistant` -> `model`
-    const mappedHistory = history.map((m: any) => ({
-      role: m.role === 'assistant' ? 'model' : m.role,
-      parts: [{ text: m.content }]
-    }))
+    // Prepare prompt
+    const prompt = `
+      You are an AI tutor specialized in this video content.
+      Answer the user's question ONLY using the information provided in the following transcript.
+      If the answer is not in the transcript, say "I'm sorry, but that information is not covered in this video."
+      
+      Transcript:
+      ${video.transcript}
+      
+      User Question:
+      ${question}
+    `;
 
-    const chatModel = genAI.getGenerativeModel({
-      model: "gemini-2.5-flash",
-      systemInstruction: systemInstruction,
-      generationConfig: {
-        maxOutputTokens: 600, // Implements the token limit request
-      }
-    })
+    // Save user message
+    await supabase.from("chats").insert({
+      video_id,
+      user_id: user.id,
+      role: "user",
+      message: question
+    });
 
-    const chat = chatModel.startChat({
-       history: mappedHistory
-    })
+    // Get response from Gemini
+    const result = await geminiModel.generateContent(prompt);
+    const answer = result.response.text();
 
-    const result = await chat.sendMessage(message)
-    const answer = result.response.text()
+    // Save assistant message
+    const { data: chatEntry, error: chatError } = await supabase
+      .from("chats")
+      .insert({
+        video_id,
+        user_id: user.id,
+        role: "assistant",
+        message: answer
+      })
+      .select()
+      .single();
 
-    // Save chat history to supabase
-    await supabase.from('chats').insert([
-       { video_id: videoId, user_id: user.id, role: 'user', message: message },
-       { video_id: videoId, user_id: user.id, role: 'assistant', message: answer }
-    ])
+    if (chatError) throw chatError;
 
-    return NextResponse.json({ answer })
+    return NextResponse.json({ answer, chat: chatEntry });
   } catch (error: any) {
-    console.error("Gemini API Error in Chat Route:", error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    console.error("Chat Error:", error);
+    return NextResponse.json({ error: error.message || "Failed to get response from AI tutor" }, { status: 500 });
   }
 }

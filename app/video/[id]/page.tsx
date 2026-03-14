@@ -2,6 +2,7 @@ import { createClient } from '@/utils/supabase/server'
 import { notFound, redirect } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ChatTutor } from '@/components/ChatTutor'
+import { PodcastPlayer } from '@/components/PodcastPlayer'
 import Link from 'next/link'
 
 export default async function VideoPage({ params }: { params: Promise<{ id: string }> }) {
@@ -51,31 +52,40 @@ export default async function VideoPage({ params }: { params: Promise<{ id: stri
 
         {/* Podcast Player */}
         {video.podcast_audio_url && (
-          <Card className="shadow-md border-primary/20 bg-primary/5">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <span className="text-xl">🎧</span> AI Masterclass Podcast
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <audio controls className="w-full outline-none" src={video.podcast_audio_url}>
-                Your browser does not support the audio element.
-              </audio>
-            </CardContent>
-          </Card>
+          <PodcastPlayer audioUrl={video.podcast_audio_url} />
         )}
 
         {/* Summary */}
         <Card className="shadow-md">
           <CardHeader>
              <CardTitle className="flex items-center gap-2">
-               <span className="text-xl">📝</span> Summary & Key Concepts
+               <span className="text-xl">📝</span> Summary
              </CardTitle>
           </CardHeader>
           <CardContent className="whitespace-pre-wrap text-[15px] leading-relaxed">
              {video.summary}
           </CardContent>
         </Card>
+
+        {/* Key Concepts */}
+        {video.key_concepts && video.key_concepts.length > 0 && (
+          <Card className="shadow-md border-blue-100 bg-blue-50/10">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <span className="text-xl">💡</span> Key Learning Concepts
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap gap-2">
+                {video.key_concepts.map((concept: string, i: number) => (
+                  <div key={i} className="bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 px-3 py-1 rounded-full text-sm font-medium border border-blue-200 dark:border-blue-800">
+                    {concept}
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Bullet Points */}
         {video.bullet_points && video.bullet_points.length > 0 && (
