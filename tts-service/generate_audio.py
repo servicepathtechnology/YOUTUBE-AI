@@ -2,28 +2,29 @@ from flask import Flask, request, send_file
 from gtts import gTTS
 import os
 import uuid
-from pydub import AudioSegment
+try:
+    from pydub import AudioSegment
+    PYDUB_AVAILABLE = True
+except ImportError as e:
+    print(f"Pydub not available (likely due to Python 3.13+ audioop removal): {e}")
+    PYDUB_AVAILABLE = False
 
 app = Flask(__name__)
 
 # Speaker Configuration
-# Teacher -> Indian accent (co.in) - Using 'variety' option for more distinct voices
-# Student -> Australian accent (com.au) - Using 'variety' option for more distinct voices
-# Alternative (Standard):
-# Teacher -> US accent (tld="com")
-# Student -> UK accent (tld="co.uk")
+# Teacher -> Indian accent (co.in) 
+# Student -> Australian accent (com.au)
 SPEAKER_CONFIG = {
     "Teacher": {"tld": "co.in"},
     "Student": {"tld": "com.au"}
 }
 DEFAULT_SPEAKER = "Teacher"
-PAUSE_DURATION = 500  # 500ms pause between speakers
+PAUSE_DURATION = 500  # 500ms pause
 
 @app.route('/generate-podcast', methods=['POST'])
 def generate_podcast():
     """
     Endpoint to generate a podcast mp3 from a script.
-    Expects JSON: {"text": "Teacher: line1\nStudent: line2"}
     """
     try:
         data = request.get_json()
@@ -33,8 +34,10 @@ def generate_podcast():
         script_text = data['text']
         lines = script_text.split('\n')
         
-        combined_audio = AudioSegment.empty()
-        pause = AudioSegment.silent(duration=PAUSE_DURATION)
+        combined_audio = None
+        if PYDUB_AVAILABLE:
+            combined_audio = AudioSegment.empty()
+            pause = AudioSegment.silent(duration=PAUSE_DURATION)
         
         temp_files = []
         
@@ -46,23 +49,14 @@ def generate_podcast():
             speaker = DEFAULT_SPEAKER
             text_to_speak = line
             
-            # Detect speaker using "Speaker: text" format
+            # Detect speaker
             if ":" in line:
                 parts = line.split(":", 1)
                 speaker_prefix = parts[0].strip()
                 if speaker_prefix in SPEAKER_CONFIG:
                     speaker = speaker_prefix
                     text_to_speak = parts[1].strip()
-                else:
-                    # If label is unknown, use default accent but keep line as is
-                    speaker = DEFAULT_SPEAKER
-                    text_to_speak = line
-            else:
-                # No speaker label found, use default accent
-                speaker = DEFAULT_SPEAKER
-                text_to_speak = line
 
-            # Get accent configuration
             config = SPEAKER_CONFIG.get(speaker, SPEAKER_CONFIG[DEFAULT_SPEAKER])
             
             # Generate temporary segment
@@ -70,49 +64,45 @@ def generate_podcast():
             temp_path = os.path.join(os.getcwd(), temp_filename)
             temp_files.append(temp_path)
             
-            print(f"Generating audio for {speaker} using TLD: {config['tld']}")
             tts = gTTS(text=text_to_speak, lang='en', tld=config['tld'])
             tts.save(temp_path)
             
-            # Load segment and append to master audio
-            try:
-                segment = AudioSegment.from_mp3(temp_path)
-                combined_audio += segment + pause
-            except Exception as e:
-                print(f"Warning: pydub could not load segment {temp_path}. Error: {e}")
+            # Load segment if pydub is available
+            if PYDUB_AVAILABLE and combined_audio is not None:
+                try:
+                    segment = AudioSegment.from_mp3(temp_path)
+                    combined_audio += segment + pause
+                except Exception as e:
+                    print(f"Warning: pydub load failed: {e}")
 
         if not temp_files:
-            return {"error": "No valid text lines found in script"}, 400
+            return {"error": "No valid text lines found"}, 400
 
-        # Final podcast output
-        # Using a UUID in filename to avoid concurrent request issues, but return as podcast.mp3 download
+        # Export final podcast
         final_filename = f"podcast_{uuid.uuid4()}.mp3"
         final_path = os.path.join(os.getcwd(), final_filename)
         
         export_success = False
-        if len(combined_audio) > 0:
+        if PYDUB_AVAILABLE and combined_audio is not None and len(combined_audio) > 0:
             try:
                 combined_audio.export(final_path, format="mp3")
                 export_success = True
             except Exception as e:
-                print(f"Error exporting with pydub: {e}")
+                print(f"pydub export failed: {e}")
 
-        # Fallback to binary concatenation if pydub/ffmpeg fails
+        # Fallback to binary concatenation
         if not export_success:
-            print("Falling back to binary concatenation fallback.")
+            print("Using binary concatenation fallback (standard merge).")
             with open(final_path, "wb") as f_out:
                 for f in temp_files:
                     with open(f, "rb") as f_in:
                         f_out.write(f_in.read())
 
-        # Cleanup temporary segments
+        # Cleanup
         for f in temp_files:
-            try:
-                os.remove(f)
-            except:
-                pass
+            try: os.remove(f)
+            except: pass
                 
-        # Return the final mp3 file, renaming it to podcast.mp3 for the browser/client
         if os.path.exists(final_path):
             return send_file(final_path, mimetype='audio/mpeg', as_attachment=True, download_name='podcast.mp3')
         else:
@@ -123,4 +113,6 @@ def generate_podcast():
         return {"error": str(e)}, 500
 
 if __name__ == '__main__':
-    app.run(port=5001, debug=True, host='0.0.0.0')
+    # Render uses the PORT environment variable
+    port = int(os.environ.get("PORT", 5001))
+    app.run(port=port, debug=False, host='0.0.0.0')
