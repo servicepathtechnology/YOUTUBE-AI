@@ -21,6 +21,10 @@ SPEAKER_CONFIG = {
 DEFAULT_SPEAKER = "Teacher"
 PAUSE_DURATION = 500  # 500ms pause
 
+@app.route('/', methods=['GET', 'POST'])
+def health():
+    return {"status": "ok", "message": "TTS Service is running. Use /generate-podcast for audio generation."}
+
 @app.route('/generate-podcast', methods=['POST'])
 def generate_podcast():
     """
