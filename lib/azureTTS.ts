@@ -9,7 +9,7 @@ export async function textToSpeech(text: string): Promise<Buffer> {
   }
 
   const speechConfig = sdk.SpeechConfig.fromSubscription(speechKey, speechRegion);
-  speechConfig.speechSynthesisOutputFormat = sdk.SpeechSynthesisOutputFormat.Audio16khz32kBitrateMonoMp3;
+  speechConfig.speechSynthesisOutputFormat = sdk.SpeechSynthesisOutputFormat.Audio16Khz32KBitRateMonoMp3;
   
   // Choose a conversational voice
   speechConfig.speechSynthesisVoiceName = "en-US-JennyNeural";

@@ -50,7 +50,7 @@ export async function POST(req: Request) {
     }
 
     // 2. Generate Audio with Python gTTS Service (Step 5 & 7)
-    const pythonServiceUrl = "http://localhost:5001/generate-podcast";
+    const pythonServiceUrl = process.env.TTS_SERVICE_URL || "http://localhost:5001/generate-podcast";
     
     const ttsResponse = await fetch(pythonServiceUrl, {
       method: "POST",
