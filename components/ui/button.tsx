@@ -16,6 +16,8 @@ const buttonVariants = cva(
           "bg-transparent border border-border text-text-secondary hover:border-accent hover:text-text-primary hover:bg-accent-glow",
         destructive: 
           "bg-transparent border border-error/30 text-error hover:bg-error/10",
+        outline:
+          "bg-transparent border border-border text-text-primary hover:bg-bg-secondary",
         link: "text-accent underline-offset-4 hover:underline",
       },
       size: {
@@ -23,6 +25,7 @@ const buttonVariants = cva(
         sm: "h-8 px-3 text-xs",
         lg: "h-12 px-7 text-base",
         icon: "size-10",
+        "icon-sm": "size-8",
       },
     },
     defaultVariants: {

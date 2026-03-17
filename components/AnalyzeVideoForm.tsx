@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Loader2, Sparkles, Check, FileText, Headphones, MessageSquare } from 'lucide-react'
+import { Loader2, Sparkles, Check, FileText, Headphones, MessageSquare, AlertCircle } from 'lucide-react'
 
 export function AnalyzeVideoForm() {
   const [url, setUrl] = useState('')
