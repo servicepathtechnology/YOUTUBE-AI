@@ -39,8 +39,8 @@ export default async function NavBar() {
         <div className="flex items-center gap-3">
           {user ? (
             <>
-              <Link href="/dashboard">
-                <Button variant="ghost" size="sm">Dashboard</Button>
+              <Link href="/dashboard/my-videos">
+                <Button variant="ghost" size="sm">My Videos</Button>
               </Link>
               <LogoutButton />
             </>

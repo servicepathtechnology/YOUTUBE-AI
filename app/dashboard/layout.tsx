@@ -85,17 +85,6 @@ export default function DashboardLayout({
             </nav>
           </div>
         </div>
-
-        {/* Upgrade Card */}
-        <div className="mt-auto p-5 rounded-xl bg-gradient-to-br from-accent/10 to-accent-secondary/5 border border-accent/20 space-y-3 shadow-glow">
-          <div>
-            <p className="font-headings font-bold text-sm text-text-primary">Go Pro</p>
-            <p className="text-[11px] text-text-secondary mt-0.5">Unlimited videos, priority AI</p>
-          </div>
-          <Button size="sm" className="w-full h-8 text-xs font-bold">
-            Upgrade
-          </Button>
-        </div>
       </aside>
 
       {/* Main Content Area */}

@@ -2,11 +2,24 @@ import Link from 'next/link'
 import { createClient } from '@/utils/supabase/server'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { Play, Sparkles, Headphones, MessageSquare, FileText, Check } from 'lucide-react'
+import { Play, Sparkles, Headphones, MessageSquare, FileText, Check, Video, Clock, ArrowRight } from 'lucide-react'
+import { AnalyzeVideoForm } from '@/components/AnalyzeVideoForm'
+import { VideoCard } from '@/components/VideoCard'
 
 export default async function Home() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
+
+  let videos = []
+  if (user) {
+    const { data } = await supabase
+      .from('videos')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(3)
+    videos = data || []
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-bg-primary pt-[64px]">
@@ -20,24 +33,41 @@ export default async function Home() {
              }}></div>
         <div className="absolute inset-0 z-0" 
              style={{
-               background: 'radial-gradient(ellipse 80% 50% at 50% -10%, rgba(99,102,241,0.15), transparent)'
+               background: 'radial-gradient(ellipse 80% 50% at 50% -10%, rgba(99, 102, 241, 0.15), transparent)'
              }}></div>
 
-        <div className="relative z-10 max-w-[680px] mx-auto text-center">
+        <div className="relative z-10 w-full max-w-[800px] mx-auto text-center">
           {user ? (
-            <>
-              <h1 className="font-headings text-[clamp(36px,5vw,64px)] leading-[1.1] font-extrabold text-text-primary mb-6">
-                Welcome back!
-              </h1>
-              <p className="font-sans text-lg text-text-secondary max-w-[520px] mx-auto mb-10 leading-relaxed">
-                Ready to learn something new? Go to your dashboard to analyze a video.
-              </p>
-              <Link href="/dashboard">
-                <Button size="lg" className="h-14 px-8 text-[15px] font-semibold">
-                  Go to Dashboard
-                </Button>
-              </Link>
-            </>
+            <div className="space-y-10 py-12">
+              <div className="space-y-4">
+                <h1 className="font-headings text-[clamp(32px,4vw,48px)] leading-[1.1] font-extrabold text-text-primary">
+                  Welcome back, <span className="text-accent">{user.email?.split('@')[0]}</span>
+                </h1>
+                <p className="font-sans text-base text-text-secondary max-w-[520px] mx-auto leading-relaxed">
+                  Ready to master another video today? Paste a link below to get started.
+                </p>
+              </div>
+              
+              <div className="max-w-[600px] mx-auto text-left">
+                <AnalyzeVideoForm />
+              </div>
+
+              {videos.length > 0 && (
+                <div className="space-y-6 pt-10 text-left">
+                  <div className="flex items-center justify-between px-2">
+                    <h3 className="font-headings text-lg font-bold text-text-primary">Recent Analyses</h3>
+                    <Link href="/dashboard/my-videos" className="text-xs text-accent font-bold hover:underline flex items-center gap-1 group">
+                      View all <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+                    </Link>
+                  </div>
+                  <div className="flex flex-col gap-3">
+                    {videos.map((video: any) => (
+                      <VideoCard key={video.id} video={video} />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           ) : (
             <>
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-accent-glow border border-accent/30 text-accent text-[12px] font-medium mb-6">
