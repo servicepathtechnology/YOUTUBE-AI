@@ -1,41 +1,177 @@
 import Link from 'next/link'
+import { createClient } from '@/utils/supabase/server'
 import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import { Play, Sparkles, Headphones, MessageSquare, FileText, Check } from 'lucide-react'
 
-export default function Home() {
+export default async function Home() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
   return (
-    <div className="flex-1 flex flex-col items-center justify-center text-center px-4 py-20 bg-gradient-to-b from-background to-muted/50">
-      <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight mb-6 mt-10">
-        Turn YouTube Videos Into Your <br className="hidden sm:block" />
-        <span className="text-primary bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-purple-600">
-          Personal AI Tutor
-        </span>
-      </h1>
-      <p className="text-xl text-muted-foreground max-w-2xl mb-10">
-        Paste any YouTube link and instantly get summaries, podcasts, and an AI tutor that answers your questions based on the video content.
-      </p>
-      <Link href="/signup">
-        <Button size="lg" className="h-12 px-8 text-lg font-medium rounded-full shadow-lg hover:shadow-xl transition-all hover:scale-105">
-          Start Learning
-        </Button>
-      </Link>
-      
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-24 max-w-5xl w-full text-left">
-        <div className="bg-card p-6 rounded-2xl border shadow-sm">
-          <div className="h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mb-4 text-2xl">📝</div>
-          <h3 className="font-bold text-xl mb-2">Instant Summaries</h3>
-          <p className="text-muted-foreground">Get quick bullet points and key concept explanations without watching the whole video.</p>
+    <div className="flex flex-col min-h-screen bg-bg-primary pt-[64px]">
+      {/* Hero Section */}
+      <section className="relative min-h-[calc(100vh-64px)] flex items-center justify-center overflow-hidden px-6">
+        {/* Background Patterns */}
+        <div className="absolute inset-0 z-0 opacity-40" 
+             style={{
+               backgroundImage: `linear-gradient(var(--border-subtle) 1px, transparent 1px), linear-gradient(90deg, var(--border-subtle) 1px, transparent 1px)`,
+               backgroundSize: '48px 48px'
+             }}></div>
+        <div className="absolute inset-0 z-0" 
+             style={{
+               background: 'radial-gradient(ellipse 80% 50% at 50% -10%, rgba(99,102,241,0.15), transparent)'
+             }}></div>
+
+        <div className="relative z-10 max-w-[680px] mx-auto text-center">
+          {user ? (
+            <>
+              <h1 className="font-headings text-[clamp(36px,5vw,64px)] leading-[1.1] font-extrabold text-text-primary mb-6">
+                Welcome back!
+              </h1>
+              <p className="font-sans text-lg text-text-secondary max-w-[520px] mx-auto mb-10 leading-relaxed">
+                Ready to learn something new? Go to your dashboard to analyze a video.
+              </p>
+              <Link href="/dashboard">
+                <Button size="lg" className="h-14 px-8 text-[15px] font-semibold">
+                  Go to Dashboard
+                </Button>
+              </Link>
+            </>
+          ) : (
+            <>
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-accent-glow border border-accent/30 text-accent text-[12px] font-medium mb-6">
+                <Sparkles className="w-3.5 h-3.5" />
+                AI-Powered Learning
+              </div>
+              
+              <h1 className="font-headings text-[clamp(36px,5vw,64px)] leading-[1.1] font-extrabold text-text-primary mb-6">
+                Turn Any YouTube Video Into Your Personal <span className="bg-gradient-to-br from-accent to-accent-secondary bg-clip-text text-transparent">AI Tutor</span>
+              </h1>
+              
+              <p className="font-sans text-lg text-text-secondary max-w-[520px] mx-auto mb-10 leading-relaxed">
+                Paste any YouTube link and instantly get summaries, podcasts, and an AI tutor that answers your questions based on the video content.
+              </p>
+              
+              <div className="flex flex-wrap items-center justify-center gap-4 mb-12">
+                <Link href="/signup">
+                  <Button size="lg" className="h-14 px-8 text-[15px] font-semibold">
+                    Start Learning Free →
+                  </Button>
+                </Link>
+                <Button variant="ghost" size="lg" className="h-14 px-8 text-[15px] font-semibold flex items-center gap-2">
+                  <Play className="w-4 h-4 fill-current" />
+                  Watch Demo
+                </Button>
+              </div>
+
+              <div className="flex items-center justify-center gap-3">
+                <div className="flex -space-x-2">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <div key={i} className={`w-6 h-6 rounded-full border-2 border-bg-primary flex items-center justify-center text-[8px] font-bold text-white shadow-sm`}
+                         style={{ backgroundColor: `hsl(${i * 45}, 70%, 60%)` }}>
+                      {String.fromCharCode(64 + i)}
+                    </div>
+                  ))}
+                </div>
+                <span className="text-[13px] text-text-muted font-medium">
+                  Trusted by 2,000+ learners
+                </span>
+              </div>
+            </>
+          )}
         </div>
-        <div className="bg-card p-6 rounded-2xl border shadow-sm">
-          <div className="h-12 w-12 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center mb-4 text-2xl">🎧</div>
-          <h3 className="font-bold text-xl mb-2">AI Podcasts</h3>
-          <p className="text-muted-foreground">Listen to conversational podcast-style explanations generated right from the video transcript.</p>
+      </section>
+
+      {/* Features Section */}
+      <section id="features" className="py-24 px-6 max-w-7xl mx-auto w-full">
+        <div className="text-center mb-16">
+          <p className="text-accent text-[12px] font-bold uppercase tracking-[0.15em] mb-3">What You Get</p>
+          <h2 className="font-headings text-4xl font-bold text-text-primary">Everything you need to learn faster</h2>
         </div>
-        <div className="bg-card p-6 rounded-2xl border shadow-sm">
-          <div className="h-12 w-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mb-4 text-2xl">💬</div>
-          <h3 className="font-bold text-xl mb-2">Interactive Tutor</h3>
-          <p className="text-muted-foreground">Chat with an AI that knows the video intimately. Ask questions, clarify doubts, and learn faster.</p>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <Card className="p-8 border-border bg-bg-card rounded-lg hover:border-accent/40 group transition-all duration-300">
+            <div className="w-11 h-11 rounded-[10px] bg-accent-glow border border-accent/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+              <FileText className="w-5 h-5 text-accent" />
+            </div>
+            <h3 className="font-headings text-lg font-bold text-text-primary mb-3">Instant Summaries</h3>
+            <p className="font-sans text-sm text-text-secondary leading-relaxed">
+              Get quick bullet points and key concept explanations without watching the whole video. Save hours of time.
+            </p>
+          </Card>
+
+          <Card className="p-8 border-border bg-bg-card rounded-lg hover:border-accent/40 group transition-all duration-300">
+            <div className="w-11 h-11 rounded-[10px] bg-accent-glow border border-accent/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+              <Headphones className="w-5 h-5 text-accent" />
+            </div>
+            <h3 className="font-headings text-lg font-bold text-text-primary mb-3">AI Podcast</h3>
+            <p className="font-sans text-sm text-text-secondary leading-relaxed">
+              Listen to conversational podcast-style explanations generated right from the video transcript. Learn on the go.
+            </p>
+          </Card>
+
+          <Card className="p-8 border-border bg-bg-card rounded-lg hover:border-accent/40 group transition-all duration-300">
+            <div className="w-11 h-11 rounded-[10px] bg-accent-glow border border-accent/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+              <MessageSquare className="w-5 h-5 text-accent" />
+            </div>
+            <h3 className="font-headings text-lg font-bold text-text-primary mb-3">Interactive Tutor</h3>
+            <p className="font-sans text-sm text-text-secondary leading-relaxed">
+              Chat with an AI that knows the video intimately. Ask questions, clarify doubts, and master any subject.
+            </p>
+          </Card>
         </div>
-      </div>
+      </section>
+
+      {/* How It Works */}
+      <section id="how-it-works" className="py-24 px-6 bg-bg-secondary border-y border-border">
+        <div className="max-w-7xl mx-auto w-full">
+          <h2 className="font-headings text-3xl font-bold text-text-primary text-center mb-16">Up and running in 3 steps</h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 relative">
+            {/* Connecting line (desktop only) */}
+            <div className="hidden md:block absolute top-6 left-[15%] right-[15%] h-px bg-border z-0"></div>
+            
+            <div className="relative z-10 text-center">
+              <div className="w-12 h-12 rounded-full bg-accent text-white flex items-center justify-center font-bold mx-auto mb-6 shadow-glow">1</div>
+              <h4 className="font-headings text-lg font-bold text-text-primary mb-2">Paste YouTube URL</h4>
+              <p className="text-sm text-text-secondary">Copy any video link from YouTube and paste it into our analyzer.</p>
+            </div>
+
+            <div className="relative z-10 text-center">
+              <div className="w-12 h-12 rounded-full bg-accent text-white flex items-center justify-center font-bold mx-auto mb-6 shadow-glow">2</div>
+              <h4 className="font-headings text-lg font-bold text-text-primary mb-2">AI Processes Video</h4>
+              <p className="text-sm text-text-secondary">Our AI analyzes the transcript to generate summaries and audio content.</p>
+            </div>
+
+            <div className="relative z-10 text-center">
+              <div className="w-12 h-12 rounded-full bg-accent text-white flex items-center justify-center font-bold mx-auto mb-6 shadow-glow">3</div>
+              <h4 className="font-headings text-lg font-bold text-text-primary mb-2">Start Learning</h4>
+              <p className="text-sm text-text-secondary">Read the summary, listen to the podcast, or chat with your new AI tutor.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="py-12 px-6 border-t border-border-subtle bg-bg-primary">
+        <div className="max-w-7xl mx-auto w-full flex flex-wrap items-center justify-between gap-8">
+          <div className="flex flex-col gap-2">
+            <Link href="/" className="font-headings font-bold text-lg text-text-primary">VideoTutor AI</Link>
+            <p className="text-[13px] text-text-muted">Master any YouTube video in minutes.</p>
+          </div>
+          
+          <div className="flex items-center gap-8">
+            <Link href="#" className="text-[13px] text-text-muted hover:text-text-primary transition-colors">Privacy</Link>
+            <Link href="#" className="text-[13px] text-text-muted hover:text-text-primary transition-colors">Terms</Link>
+            <Link href="#" className="text-[13px] text-text-muted hover:text-text-primary transition-colors">Contact</Link>
+          </div>
+
+          <div className="text-[13px] text-text-muted">
+            © 2025 VideoTutor AI
+          </div>
+        </div>
+      </footer>
     </div>
   )
 }

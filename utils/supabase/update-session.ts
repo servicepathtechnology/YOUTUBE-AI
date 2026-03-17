@@ -32,7 +32,7 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  const unprotectedRoutes = ['/', '/login', '/signup', '/api']
+  const unprotectedRoutes = ['/', '/login', '/signup', '/verify', '/auth/callback', '/api']
   
   if (
     !user && 

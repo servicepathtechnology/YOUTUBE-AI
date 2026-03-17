@@ -4,13 +4,19 @@ import { useRouter } from 'next/navigation'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Loader2 } from 'lucide-react'
+import { Label } from '@/components/ui/label'
+import { Loader2, Sparkles, Check, FileText, Headphones, MessageSquare } from 'lucide-react'
 
 export function AnalyzeVideoForm() {
   const [url, setUrl] = useState('')
   const [status, setStatus] = useState<string>('idle')
   const [error, setError] = useState<string | null>(null)
   const [transcriptLen, setTranscriptLen] = useState<number>(0)
+  const [features, setFeatures] = useState({
+    summary: true,
+    podcast: true,
+    chat: true
+  })
   const router = useRouter()
 
   const handleAnalyze = async (e: React.FormEvent) => {
@@ -71,62 +77,127 @@ export function AnalyzeVideoForm() {
     }
   }
 
+  const toggleFeature = (feature: keyof typeof features) => {
+    setFeatures(prev => ({ ...prev, [feature]: !prev[feature] }))
+  }
+
   return (
-    <Card className="shadow-lg border-primary/20 bg-card/50 backdrop-blur-sm">
-      <CardContent className="p-6">
-        <form onSubmit={handleAnalyze} className="flex flex-col md:flex-row gap-4">
-          <Input 
-            type="url" 
-            placeholder="Paste YouTube Video URL here..." 
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            className="flex-1 text-lg py-6"
-            required
+    <Card className="bg-bg-card border-border rounded-xl shadow-card overflow-hidden">
+      <CardContent className="p-7 space-y-7">
+        <form onSubmit={handleAnalyze} className="space-y-6">
+          <div className="space-y-2">
+            <Label htmlFor="youtube-url">YouTube URL</Label>
+            <Input 
+              id="youtube-url"
+              type="url" 
+              placeholder="https://youtube.com/watch?v=..." 
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              className="h-[52px] font-mono text-sm"
+              required
+              disabled={status !== 'idle' && status !== 'error'}
+            />
+          </div>
+
+          <div className="flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={() => toggleFeature('summary')}
+              className={`flex items-center gap-2.5 px-4 py-2 rounded-full border text-[13px] font-bold transition-all ${
+                features.summary 
+                  ? 'bg-accent-glow border-accent text-accent' 
+                  : 'bg-bg-secondary border-border text-text-muted hover:border-text-secondary'
+              }`}
+            >
+              <div className={`w-4 h-4 rounded-full border flex items-center justify-center transition-colors ${features.summary ? 'bg-accent border-accent text-white' : 'border-border'}`}>
+                {features.summary && <Check className="w-2.5 h-2.5" />}
+              </div>
+              Summary
+            </button>
+            <button
+              type="button"
+              onClick={() => toggleFeature('podcast')}
+              className={`flex items-center gap-2.5 px-4 py-2 rounded-full border text-[13px] font-bold transition-all ${
+                features.podcast 
+                  ? 'bg-accent-glow border-accent text-accent' 
+                  : 'bg-bg-secondary border-border text-text-muted hover:border-text-secondary'
+              }`}
+            >
+              <div className={`w-4 h-4 rounded-full border flex items-center justify-center transition-colors ${features.podcast ? 'bg-accent border-accent text-white' : 'border-border'}`}>
+                {features.podcast && <Check className="w-2.5 h-2.5" />}
+              </div>
+              Podcast
+            </button>
+            <button
+              type="button"
+              onClick={() => toggleFeature('chat')}
+              className={`flex items-center gap-2.5 px-4 py-2 rounded-full border text-[13px] font-bold transition-all ${
+                features.chat 
+                  ? 'bg-accent-glow border-accent text-accent' 
+                  : 'bg-bg-secondary border-border text-text-muted hover:border-text-secondary'
+              }`}
+            >
+              <div className={`w-4 h-4 rounded-full border flex items-center justify-center transition-colors ${features.chat ? 'bg-accent border-accent text-white' : 'border-border'}`}>
+                {features.chat && <Check className="w-2.5 h-2.5" />}
+              </div>
+              Chat Tutor
+            </button>
+          </div>
+
+          <Button 
+            type="submit" 
+            size="lg" 
+            className="w-full h-14 bg-gradient-to-br from-accent to-accent-secondary text-white font-bold text-[15px] shadow-glow"
             disabled={status !== 'idle' && status !== 'error'}
-          />
-          <Button type="submit" size="lg" className="h-[52px] px-8" disabled={status !== 'idle' && status !== 'error'}>
-            {status !== 'idle' && status !== 'error' && status !== 'done' ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : null}
-            Analyze Video
+          >
+            {status !== 'idle' && status !== 'error' && status !== 'done' ? (
+              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+            ) : (
+              <Sparkles className="mr-2 h-5 w-5 fill-current" />
+            )}
+            Analyze Video ✦
           </Button>
         </form>
 
         {status !== 'idle' && status !== 'done' && status !== 'error' && (
-          <div className="mt-6 space-y-4 bg-muted/40 p-5 rounded-xl border">
-            <h3 className="font-semibold text-sm text-foreground uppercase tracking-wider mb-3">Processing Steps</h3>
+          <div className="pt-7 border-t border-border space-y-5">
+            <h3 className="text-[11px] font-bold text-text-muted uppercase tracking-[0.15em]">Processing Steps</h3>
             
-            <div className="flex items-center gap-3">
-              <div className={`w-3.5 h-3.5 rounded-full ${status === 'fetching_transcript' ? 'bg-yellow-500 animate-pulse shadow-[0_0_8px_rgba(234,179,8,0.6)]' : 'bg-green-500'}`}></div>
-              <span className={status === 'fetching_transcript' ? 'font-medium text-foreground' : 'text-muted-foreground'}>
-                Fetching transcript {transcriptLen > 0 && `(${transcriptLen} chars)`}
-              </span>
-            </div>
-            
-            <div className="flex items-center gap-3">
-              <div className={`w-3.5 h-3.5 rounded-full ${status === 'generating_summary' ? 'bg-yellow-500 animate-pulse shadow-[0_0_8px_rgba(234,179,8,0.6)]' : (status === 'creating_podcast' || status === 'saving' ? 'bg-green-500' : 'bg-muted-foreground/30')}`}></div>
-              <span className={status === 'generating_summary' ? 'font-medium text-foreground' : (status === 'creating_podcast' || status === 'saving' ? 'text-muted-foreground' : 'text-muted-foreground/50')}>
-                Generating AI summary & concepts
-              </span>
+            <div className="space-y-4">
+              {[
+                { id: 'fetching_transcript', label: 'Fetching transcript', active: status === 'fetching_transcript', done: ['generating_summary', 'creating_podcast', 'done'].includes(status) },
+                { id: 'generating_summary', label: 'Generating AI summary & concepts', active: status === 'generating_summary', done: ['creating_podcast', 'done'].includes(status) },
+                { id: 'creating_podcast', label: 'Creating AI podcast & voiceover', active: status === 'creating_podcast', done: status === 'done' },
+                { id: 'saving', label: 'Preparing tutor & saving...', active: status === 'saving', done: status === 'done' }
+              ].map((step) => (
+                <div key={step.id} className="flex items-center gap-4">
+                  <div className={`w-3.5 h-3.5 rounded-full border transition-all duration-300 ${
+                    step.active ? 'bg-accent border-accent animate-pulse shadow-glow' : 
+                    step.done ? 'bg-success border-success' : 'bg-transparent border-border'
+                  }`}>
+                    {step.done && <Check className="w-2.5 h-2.5 text-white mx-auto mt-0.5" />}
+                  </div>
+                  <span className={`text-sm font-medium transition-colors ${
+                    step.active ? 'text-text-primary' : 
+                    step.done ? 'text-text-secondary' : 'text-text-muted'
+                  }`}>
+                    {step.label}
+                  </span>
+                </div>
+              ))}
             </div>
 
-            <div className="flex items-center gap-3">
-              <div className={`w-3.5 h-3.5 rounded-full ${status === 'creating_podcast' ? 'bg-yellow-500 animate-pulse shadow-[0_0_8px_rgba(234,179,8,0.6)]' : (status === 'saving' ? 'bg-green-500' : 'bg-muted-foreground/30')}`}></div>
-              <span className={status === 'creating_podcast' ? 'font-medium text-foreground' : (status === 'saving' ? 'text-muted-foreground' : 'text-muted-foreground/50')}>
-                Creating AI podcast & voiceover
-              </span>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <div className={`w-3.5 h-3.5 rounded-full ${status === 'saving' ? 'bg-yellow-500 animate-pulse shadow-[0_0_8px_rgba(234,179,8,0.6)]' : 'bg-muted-foreground/30'}`}></div>
-              <span className={status === 'saving' ? 'font-medium text-foreground' : 'text-muted-foreground/50'}>
-                Preparing tutor & saving...
-              </span>
+            {/* Pulsing Skeleton Loader */}
+            <div className="h-2 w-full bg-bg-secondary rounded-full overflow-hidden">
+              <div className="shimmer h-full w-full"></div>
             </div>
           </div>
         )}
 
         {error && (
-          <div className="mt-4 p-4 text-red-500 bg-red-100 dark:bg-red-900/30 rounded-lg">
-            Error: {error}
+          <div className="mt-4 p-4 text-error bg-error/10 border border-error/20 rounded-lg text-sm flex items-center gap-3">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            {error}
           </div>
         )}
       </CardContent>

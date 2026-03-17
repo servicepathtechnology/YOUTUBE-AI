@@ -12,6 +12,22 @@ export function ChatTutor({ videoId, transcript }: { videoId: string, transcript
   const [loading, setLoading] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
 
+  // Fetch initial chat history from Supabase
+  useEffect(() => {
+    const fetchHistory = async () => {
+      try {
+        const res = await fetch(`/api/chat/history?video_id=${videoId}`)
+        if (res.ok) {
+          const data = await res.json()
+          setMessages(data.history.map((m: any) => ({ role: m.role, content: m.message })))
+        }
+      } catch (err) {
+        console.error("Failed to fetch history:", err)
+      }
+    }
+    fetchHistory()
+  }, [videoId])
+
   useEffect(() => {
     if (scrollRef.current) {
       const scrollable = scrollRef.current.querySelector('[data-radix-scroll-area-viewport]')

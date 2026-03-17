@@ -13,5 +13,5 @@ export function LogoutButton() {
     router.refresh()
   }
   
-  return <Button variant="outline" onClick={handleLogout}>Log out</Button>
+  return <Button variant="ghost" size="sm" onClick={handleLogout}>Log out</Button>
 }
