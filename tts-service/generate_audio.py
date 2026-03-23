@@ -1,7 +1,10 @@
 from flask import Flask, request, send_file
-from gtts import gTTS
 import os
 import uuid
+import asyncio
+import edge_tts
+from gtts import gTTS
+
 try:
     from pydub import AudioSegment
     PYDUB_AVAILABLE = True
@@ -11,24 +14,29 @@ except ImportError as e:
 
 app = Flask(__name__)
 
-# Speaker Configuration
-# Teacher -> Indian accent (co.in) 
-# Student -> Australian accent (com.au)
+# Neural Indian English Voices for clear, professional sound
+# Host -> Female Indian English (Neerja)
+# Expert -> Male Indian English (Prabhat)
 SPEAKER_CONFIG = {
-    "Teacher": {"tld": "co.in"},
-    "Student": {"tld": "com.au"}
+    "Host": {"voice": "en-IN-NeerjaNeural"},
+    "Expert": {"voice": "en-IN-PrabhatNeural"}
 }
-DEFAULT_SPEAKER = "Teacher"
-PAUSE_DURATION = 500  # 500ms pause
+DEFAULT_SPEAKER = "Host"
+PAUSE_DURATION = 800  # 800ms pause for clearer speaker transition
+
+async def generate_edge_tts_segment(text, voice, output_path):
+    """Generates audio segment using edge-tts (neural voices)"""
+    communicate = edge_tts.Communicate(text, voice)
+    await communicate.save(output_path)
 
 @app.route('/', methods=['GET', 'POST'])
 def health():
-    return {"status": "ok", "message": "TTS Service is running. Use /generate-podcast for audio generation."}
+    return {"status": "ok", "message": "Neural TTS Service is running. Use /generate-podcast for high-quality audio generation."}
 
 @app.route('/generate-podcast', methods=['POST'])
 def generate_podcast():
     """
-    Endpoint to generate a podcast mp3 from a script.
+    Endpoint to generate a podcast mp3 from a script using high-quality neural voices.
     """
     try:
         data = request.get_json()
@@ -45,6 +53,10 @@ def generate_podcast():
         
         temp_files = []
         
+        # We need an event loop for edge-tts
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
         for line in lines:
             line = line.strip()
             if not line:
@@ -68,8 +80,14 @@ def generate_podcast():
             temp_path = os.path.join(os.getcwd(), temp_filename)
             temp_files.append(temp_path)
             
-            tts = gTTS(text=text_to_speak, lang='en', tld=config['tld'])
-            tts.save(temp_path)
+            try:
+                # Try high-quality Neural TTS first
+                loop.run_until_complete(generate_edge_tts_segment(text_to_speak, config['voice'], temp_path))
+            except Exception as e:
+                print(f"Neural TTS failed for line: {e}. Falling back to gTTS.")
+                # Fallback to gTTS if edge-tts fails
+                tts = gTTS(text=text_to_speak, lang='en', tld='co.in')
+                tts.save(temp_path)
             
             # Load segment if pydub is available
             if PYDUB_AVAILABLE and combined_audio is not None:
@@ -78,6 +96,8 @@ def generate_podcast():
                     combined_audio += segment + pause
                 except Exception as e:
                     print(f"Warning: pydub load failed: {e}")
+
+        loop.close()
 
         if not temp_files:
             return {"error": "No valid text lines found"}, 400
