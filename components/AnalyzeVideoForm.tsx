@@ -17,6 +17,7 @@ export function AnalyzeVideoForm() {
     podcast: true,
     chat: true
   })
+  const [podcastDuration, setPodcastDuration] = useState('2') // Default 2 minutes
   const router = useRouter()
 
   const handleAnalyze = async (e: React.FormEvent) => {
@@ -63,7 +64,10 @@ export function AnalyzeVideoForm() {
       const podcastRes = await fetch('/api/generate-podcast', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ video_id: videoId })
+        body: JSON.stringify({ 
+          video_id: videoId,
+          duration: parseInt(podcastDuration)
+        })
       });
 
       if (!podcastRes.ok) throw new Error("Failed to create podcast");
@@ -143,6 +147,28 @@ export function AnalyzeVideoForm() {
               Chat Tutor
             </button>
           </div>
+
+          {features.podcast && (
+            <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
+              <Label className="text-[11px] font-bold text-text-muted uppercase tracking-wider">Podcast Duration</Label>
+              <div className="flex gap-2">
+                {['2', '5', '10'].map((dur) => (
+                  <button
+                    key={dur}
+                    type="button"
+                    onClick={() => setPodcastDuration(dur)}
+                    className={`flex-1 py-2.5 rounded-lg border text-sm font-bold transition-all ${
+                      podcastDuration === dur
+                        ? 'bg-accent text-white border-accent shadow-glow-sm'
+                        : 'bg-bg-secondary border-border text-text-muted hover:border-text-secondary'
+                    }`}
+                  >
+                    {dur} min
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           <Button 
             type="submit" 

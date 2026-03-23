@@ -5,7 +5,7 @@ import { v4 as uuidv4 } from "uuid";
 
 export async function POST(req: Request) {
   try {
-    const { video_id } = await req.json();
+    const { video_id, duration = 2 } = await req.json();
     const supabase = await createClient();
 
     const { data: video, error: fetchError } = await supabase
@@ -22,9 +22,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ audio_url: video.podcast_audio_url });
     }
 
+    // Define target character count based on duration (roughly 900-1000 chars per minute of speech)
+    const targetChars = duration * 1000;
+
     // 1. Generate Podcast Script using Gemini (Step 6)
     const scriptPrompt = `
-      You are a professional podcast script writer. Convert the following summary into a high-quality "Deep Dive" podcast episode.
+      You are a professional podcast script writer. Convert the following summary into a high-quality "Deep Dive" podcast episode that lasts approximately ${duration} minutes.
       
       Requirements:
       1. Use ONLY two speakers: "Host" and "Expert".
@@ -35,7 +38,7 @@ export async function POST(req: Request) {
          Host: [speech]
          Expert: [speech]
       6. Keep it professional, informative, and exactly like a real-time expert podcast.
-      7. Limit the script to approximately 1500 characters.
+      7. Target a script length of approximately ${targetChars} characters to ensure it lasts ${duration} minutes.
 
       Summary of the Video Content:
       ${video.summary}
@@ -44,9 +47,10 @@ export async function POST(req: Request) {
     const scriptResult = await geminiModel.generateContent(scriptPrompt);
     let podcastScript = scriptResult.response.text();
 
-    // Step 12: Limit podcast script length
-    if (podcastScript.length > 1500) {
-      podcastScript = podcastScript.substring(0, 1500);
+    // Limit podcast script length to slightly above target to avoid extreme overflows
+    const maxChars = targetChars + 500;
+    if (podcastScript.length > maxChars) {
+      podcastScript = podcastScript.substring(0, maxChars);
     }
 
     // 2. Generate Audio with Python gTTS Service (Step 5 & 7)
