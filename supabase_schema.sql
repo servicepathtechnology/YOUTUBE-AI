@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS videos (
     bullet_points TEXT[],
     key_concepts TEXT[],
     podcast_audio_url TEXT,
+    language TEXT DEFAULT 'ENGLISH',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 

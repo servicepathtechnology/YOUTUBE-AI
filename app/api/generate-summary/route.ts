@@ -5,7 +5,7 @@ import { chunkText } from "@/utils/textChunker";
 
 export async function POST(req: Request) {
   try {
-    const { video_id } = await req.json();
+    const { video_id, language = 'ENGLISH' } = await req.json();
     const supabase = await createClient();
 
     const { data: video, error: fetchError } = await supabase
@@ -34,17 +34,19 @@ export async function POST(req: Request) {
       prompt = `
         You are an expert content analyzer. Summarize the provided YouTube transcript into a structured format.
         
+        CRITICAL: The entire response (summary, bullet points, and key concepts) MUST be in ${language} language.
+        
         Output MUST be a valid JSON object with the following structure:
         {
-          "summary": "A concise 2-3 sentence narrative overview of the video.",
-          "bullet_points": ["Point 1", "Point 2", ... "Point 10"],
-          "key_concepts": ["Concept 1", "Concept 2", ... "Concept 5"]
+          "summary": "A concise 2-3 sentence narrative overview of the video in ${language}.",
+          "bullet_points": ["Point 1 in ${language}", "Point 2 in ${language}", ... "Point 10 in ${language}"],
+          "key_concepts": ["Concept 1 in ${language}", "Concept 2 in ${language}", ... "Concept 5 in ${language}"]
         }
 
         Requirements:
-        1. Narrative summary must be accurate to the video content.
-        2. Provide EXACTLY 10 bullet points for key takeaways.
-        3. Provide EXACTLY 5 short key learning concepts.
+        1. Narrative summary must be accurate to the video content and in ${language}.
+        2. Provide EXACTLY 10 bullet points for key takeaways in ${language}.
+        3. Provide EXACTLY 5 short key learning concepts in ${language}.
         4. Do not include any text before or after the JSON.
         
         Transcript:
@@ -55,22 +57,24 @@ export async function POST(req: Request) {
       prompt = `
         You are an expert content analyzer. I don't have the full transcript for this YouTube video, but I have the title: "${title}".
         
+        CRITICAL: The entire response (summary, bullet points, and key concepts) MUST be in ${language} language.
+        
         Using your knowledge and the context of the title, provide a highly probable summary of what this video covers. 
         If it's a popular topic (like AI, business, tech), use your training data to be as specific as possible.
         
         Output MUST be a valid JSON object with the following structure:
         {
-          "summary": "A concise 2-3 sentence overview based on the title and likely content.",
-          "bullet_points": ["Point 1", "Point 2", ... "Point 10"],
-          "key_concepts": ["Concept 1", "Concept 2", ... "Concept 5"]
+          "summary": "A concise 2-3 sentence overview based on the title and likely content in ${language}.",
+          "bullet_points": ["Point 1 in ${language}", "Point 2 in ${language}", ... "Point 10 in ${language}"],
+          "key_concepts": ["Concept 1 in ${language}", "Concept 2 in ${language}", ... "Concept 5 in ${language}"]
         }
 
         Requirements:
-        1. Create a professional and convincing summary.
-        2. Provide EXACTLY 10 bullet points for likely takeaways.
-        3. Provide EXACTLY 5 short key learning concepts.
+        1. Create a professional and convincing summary in ${language}.
+        2. Provide EXACTLY 10 bullet points for likely takeaways in ${language}.
+        3. Provide EXACTLY 5 short key learning concepts in ${language}.
         4. Do not include any text before or after the JSON.
-        5. Acknowledge the topic is "${title}".
+        5. Acknowledge the topic is "${title}" in ${language}.
       `;
     }
 

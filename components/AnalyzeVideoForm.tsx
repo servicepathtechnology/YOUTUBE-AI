@@ -18,6 +18,7 @@ export function AnalyzeVideoForm() {
     chat: true
   })
   const [podcastDuration, setPodcastDuration] = useState('2') // Default 2 minutes
+  const [language, setLanguage] = useState('ENGLISH') // Default English
   const router = useRouter()
 
   const handleAnalyze = async (e: React.FormEvent) => {
@@ -32,7 +33,10 @@ export function AnalyzeVideoForm() {
       const analyzeRes = await fetch('/api/analyze-video', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ youtube_url: url })
+        body: JSON.stringify({ 
+          youtube_url: url,
+          language: language
+        })
       });
       
       if (!analyzeRes.ok) {
@@ -43,7 +47,7 @@ export function AnalyzeVideoForm() {
       const { video, status: videoStatus } = await analyzeRes.json();
       const videoId = video.id;
 
-      if (videoStatus === 'cached' && video.podcast_audio_url) {
+      if (videoStatus === 'cached' && video.podcast_audio_url && video.language === language) {
         setStatus('done');
         router.push(`/video/${videoId}`);
         return;
@@ -54,7 +58,10 @@ export function AnalyzeVideoForm() {
       const summaryRes = await fetch('/api/generate-summary', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ video_id: videoId })
+        body: JSON.stringify({ 
+          video_id: videoId,
+          language: language
+        })
       });
 
       if (!summaryRes.ok) throw new Error("Failed to generate summary");
@@ -66,7 +73,8 @@ export function AnalyzeVideoForm() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           video_id: videoId,
-          duration: parseInt(podcastDuration)
+          duration: parseInt(podcastDuration),
+          language: language
         })
       });
 
@@ -148,27 +156,48 @@ export function AnalyzeVideoForm() {
             </button>
           </div>
 
-          {features.podcast && (
-            <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
-              <Label className="text-[11px] font-bold text-text-muted uppercase tracking-wider">Podcast Duration</Label>
-              <div className="flex gap-2">
-                {['2', '5', '10'].map((dur) => (
-                  <button
-                    key={dur}
-                    type="button"
-                    onClick={() => setPodcastDuration(dur)}
-                    className={`flex-1 py-2.5 rounded-lg border text-sm font-bold transition-all ${
-                      podcastDuration === dur
-                        ? 'bg-accent text-white border-accent shadow-glow-sm'
-                        : 'bg-bg-secondary border-border text-text-muted hover:border-text-secondary'
-                    }`}
-                  >
-                    {dur} min
-                  </button>
-                ))}
+          <div className="flex flex-col md:flex-row gap-6">
+            {features.podcast && (
+              <div className="flex-1 space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                <Label className="text-[11px] font-bold text-text-muted uppercase tracking-wider">Podcast Duration</Label>
+                <div className="flex gap-2">
+                  {['2', '5', '10'].map((dur) => (
+                    <button
+                      key={dur}
+                      type="button"
+                      onClick={() => setPodcastDuration(dur)}
+                      className={`flex-1 py-2.5 rounded-lg border text-sm font-bold transition-all ${
+                        podcastDuration === dur
+                          ? 'bg-accent text-white border-accent shadow-glow-sm'
+                          : 'bg-bg-secondary border-border text-text-muted hover:border-text-secondary'
+                      }`}
+                    >
+                      {dur} min
+                    </button>
+                  ))}
+                </div>
               </div>
+            )}
+
+            <div className="flex-1 space-y-3">
+              <Label className="text-[11px] font-bold text-text-muted uppercase tracking-wider">Select Language</Label>
+              <select
+                value={language}
+                onChange={(e) => setLanguage(e.target.value)}
+                className="w-full h-[45px] bg-bg-secondary border border-border rounded-lg px-4 text-sm font-bold text-text-primary focus:outline-none focus:ring-2 focus:ring-accent/50 appearance-none cursor-pointer"
+                style={{
+                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+                  backgroundRepeat: 'no-repeat',
+                  backgroundPosition: 'right 1rem center',
+                  backgroundSize: '1.25rem'
+                }}
+              >
+                <option value="ENGLISH">ENGLISH</option>
+                <option value="TELUGU">TELUGU</option>
+                <option value="HINDI">HINDI</option>
+              </select>
             </div>
-          )}
+          </div>
 
           <Button 
             type="submit" 

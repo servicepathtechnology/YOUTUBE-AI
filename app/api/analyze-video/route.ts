@@ -5,7 +5,7 @@ import { fetchTranscript } from "@/utils/transcriptFetcher";
 
 export async function POST(req: Request) {
   try {
-    const { youtube_url } = await req.json();
+    const { youtube_url, language = 'ENGLISH' } = await req.json();
     const videoId = extractYoutubeId(youtube_url);
 
     if (!videoId) {
@@ -19,12 +19,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Check if video already exists for this user
+    // Check if video already exists for this user with the same language
     const { data: existingVideo } = await supabase
       .from("videos")
       .select("*")
       .eq("video_id", videoId)
       .eq("user_id", user.id)
+      .eq("language", language)
       .single();
 
     if (existingVideo && existingVideo.transcript) {
@@ -62,6 +63,7 @@ export async function POST(req: Request) {
         title,
         thumbnail,
         transcript,
+        language,
       })
       .select()
       .single();

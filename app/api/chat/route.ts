@@ -14,13 +14,15 @@ export async function POST(req: Request) {
 
     const { data: video, error: fetchError } = await supabase
       .from("videos")
-      .select("transcript, summary, title")
+      .select("transcript, summary, title, language")
       .eq("id", video_id)
       .single();
 
     if (fetchError || !video) {
       return NextResponse.json({ error: "Video not found" }, { status: 404 });
     }
+
+    const language = video.language || 'ENGLISH';
 
     // Fetch previous chat history for context (limit to last 10 messages)
     const { data: history } = await supabase
@@ -37,8 +39,10 @@ export async function POST(req: Request) {
       You are an AI tutor specialized in the following video content.
       Your goal is to help the user understand the video better by answering their questions accurately and concisely.
 
+      CRITICAL: Your entire response MUST be in ${language} language.
+
       Video Title: ${video.title}
-      Video Summary: ${video.summary}
+      Video Summary (in ${language}): ${video.summary}
 
       Transcript Context:
       ${video.transcript.substring(0, 15000)} // Limiting to stay within typical token bounds while being comprehensive
@@ -52,6 +56,7 @@ export async function POST(req: Request) {
       3. If the user asks for a general explanation or overview, use the summary to provide a high-level answer.
       4. If the question is completely unrelated to the video, politely state that you are specialized in this specific video's content.
       5. Keep your tone encouraging, educational, and professional.
+      6. ALL output must be in ${language}.
 
       Current User Question:
       ${question}

@@ -5,7 +5,7 @@ import { v4 as uuidv4 } from "uuid";
 
 export async function POST(req: Request) {
   try {
-    const { video_id, duration = 2 } = await req.json();
+    const { video_id, duration = 2, language = 'ENGLISH' } = await req.json();
     const supabase = await createClient();
 
     const { data: video, error: fetchError } = await supabase
@@ -27,18 +27,23 @@ export async function POST(req: Request) {
 
     // 1. Generate Podcast Script using Gemini (Step 6)
     const scriptPrompt = `
-      You are a professional podcast script writer. Convert the following summary into a high-quality "Deep Dive" podcast episode that lasts approximately ${duration} minutes.
+      You are a professional podcast script writer. Convert the following summary into a high-quality "Deep Dive" podcast episode in ENGLISH that lasts approximately ${duration} minutes.
+      
+      CRITICAL: The entire podcast script (Host and Expert dialogue) MUST be in ENGLISH language only.
       
       Requirements:
       1. Use ONLY two speakers: "Host" and "Expert".
-      2. The "Host" introduces the topic and asks insightul questions.
-      3. The "Expert" explains the details from the summary using professional but accessible language.
-      4. STICK STRICTLY to the information provided in the summary. Do not hallucinate external facts.
+      2. The "Host" introduces the topic and asks insightful questions in ENGLISH.
+      3. The "Expert" explains the details from the summary using professional but accessible language in ENGLISH.
+      4. STICK STRICTLY to the information provided in the summary. If the summary is in another language, translate it accurately to ENGLISH for the script.
       5. Format the output as:
-         Host: [speech]
-         Expert: [speech]
+         Host: [speech in ENGLISH]
+         Expert: [speech in ENGLISH]
       6. Keep it professional, informative, and exactly like a real-time expert podcast.
       7. Target a script length of approximately ${targetChars} characters to ensure it lasts ${duration} minutes.
+      8. DO NOT use any markdown formatting like asterisks (**), hashtags (#), or underscores (_). 
+      9. DO NOT include any labels like "Host:" or "Expert:" inside the actual speech text.
+      10. Use only plain text.
 
       Summary of the Video Content:
       ${video.summary}
@@ -60,12 +65,18 @@ export async function POST(req: Request) {
       ? baseUrl 
       : `${baseUrl.replace(/\/$/, "")}/generate-podcast`;
     
+    // Podcast is ALWAYS in English
+    const langCode = 'en';
+
     const ttsResponse = await fetch(pythonServiceUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ text: podcastScript }),
+      body: JSON.stringify({ 
+        text: podcastScript,
+        lang: langCode
+      }),
     });
 
     if (!ttsResponse.ok) {
