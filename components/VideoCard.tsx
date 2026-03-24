@@ -1,8 +1,10 @@
 "use client"
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { ArrowRight, FileText, Headphones, MessageSquare } from 'lucide-react'
+import { ArrowRight, FileText, Headphones, MessageSquare, Trash2 } from 'lucide-react'
+import Swal from 'sweetalert2'
 
 interface VideoCardProps {
   video: {
@@ -14,6 +16,89 @@ interface VideoCardProps {
 }
 
 export function VideoCard({ video }: VideoCardProps) {
+  const router = useRouter()
+
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+
+    const skipDeleteConfirm = localStorage.getItem('skipDeleteConfirm') === 'true'
+
+    if (skipDeleteConfirm) {
+      performDelete()
+      return
+    }
+
+    const result = await Swal.fire({
+      title: 'Delete Video?',
+      text: "This will permanently remove the video analysis and history.",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#3b82f6',
+      confirmButtonText: 'Yes, delete it!',
+      background: '#0a0a0c',
+      color: '#f4f4f5',
+      customClass: {
+        popup: 'border border-border rounded-xl shadow-card',
+        title: 'font-headings text-xl font-bold',
+        htmlContainer: 'text-text-secondary text-sm',
+        confirmButton: 'rounded-lg px-6 py-2.5 font-bold',
+        cancelButton: 'rounded-lg px-6 py-2.5 font-bold'
+      },
+      footer: `
+        <div class="flex items-center gap-2">
+          <input type="checkbox" id="dont-show-again" class="w-4 h-4 rounded border-border bg-bg-secondary text-accent focus:ring-accent">
+          <label for="dont-show-again" class="text-xs text-text-muted font-medium cursor-pointer">Don't show again</label>
+        </div>
+      `,
+      preConfirm: () => {
+        const checkbox = document.getElementById('dont-show-again') as HTMLInputElement
+        if (checkbox?.checked) {
+          localStorage.setItem('skipDeleteConfirm', 'true')
+        }
+      }
+    })
+
+    if (result.isConfirmed) {
+      performDelete()
+    }
+  }
+
+  const performDelete = async () => {
+    try {
+      const res = await fetch('/api/delete-video', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ video_id: video.id })
+      })
+
+      if (res.ok) {
+        Swal.fire({
+          toast: true,
+          position: 'top-end',
+          icon: 'success',
+          title: 'Video deleted',
+          showConfirmButton: false,
+          timer: 2000,
+          background: '#0a0a0c',
+          color: '#f4f4f5',
+        })
+        router.refresh()
+      } else {
+        throw new Error('Failed to delete video')
+      }
+    } catch (error) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Failed to delete the video.',
+        background: '#0a0a0c',
+        color: '#f4f4f5',
+      })
+    }
+  }
+
   return (
     <Card className="bg-bg-card border-border rounded-lg p-4 transition-all duration-250 hover:bg-bg-card-hover hover:border-accent/30 group">
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
@@ -55,12 +140,24 @@ export function VideoCard({ video }: VideoCardProps) {
             </div>
           </div>
           
-          <Link href={`/video/${video.id}`}>
-            <Button variant="ghost" size="sm" className="h-8 px-3 text-[12px] font-bold gap-1.5 border-transparent bg-transparent hover:bg-accent-glow hover:text-accent hover:border-accent/20 group/btn">
-              Open
-              <ArrowRight className="w-3 h-3 group-hover/btn:translate-x-0.5 transition-transform" />
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="w-8 h-8 rounded-full text-text-muted hover:text-red-500 hover:bg-red-500/10"
+              onClick={handleDelete}
+              title="Delete Video"
+            >
+              <Trash2 className="w-4 h-4" />
             </Button>
-          </Link>
+            
+            <Link href={`/video/${video.id}`}>
+              <Button variant="ghost" size="sm" className="h-8 px-3 text-[12px] font-bold gap-1.5 border-transparent bg-transparent hover:bg-accent-glow hover:text-accent hover:border-accent/20 group/btn">
+                Open
+                <ArrowRight className="w-3 h-3 group-hover/btn:translate-x-0.5 transition-transform" />
+              </Button>
+            </Link>
+          </div>
         </div>
       </div>
     </Card>

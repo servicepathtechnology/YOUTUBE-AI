@@ -1,6 +1,7 @@
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
 import { VideoCard } from '@/components/VideoCard'
+import { ClearHistoryButton } from '@/components/ClearHistoryButton'
 
 export default async function MyVideosPage() {
   const supabase = await createClient()
@@ -18,7 +19,10 @@ export default async function MyVideosPage() {
 
   return (
     <div className="space-y-8">
-      <h1 className="font-headings text-3xl font-bold text-text-primary">My Videos</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="font-headings text-3xl font-bold text-text-primary">My Videos</h1>
+        {videos && videos.length > 0 && <ClearHistoryButton />}
+      </div>
       
       {videos && videos.length > 0 ? (
         <div className="flex flex-col gap-4">

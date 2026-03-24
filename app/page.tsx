@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card'
 import { Play, Sparkles, Headphones, MessageSquare, FileText, Check, Video, Clock, ArrowRight } from 'lucide-react'
 import { AnalyzeVideoForm } from '@/components/AnalyzeVideoForm'
 import { VideoCard } from '@/components/VideoCard'
+import { ClearHistoryButton } from '@/components/ClearHistoryButton'
 
 export default async function Home() {
   const supabase = await createClient()
@@ -55,7 +56,10 @@ export default async function Home() {
               {videos.length > 0 && (
                 <div className="space-y-6 pt-10 text-left">
                   <div className="flex items-center justify-between px-2">
-                    <h3 className="font-headings text-lg font-bold text-text-primary">Recent Analyses</h3>
+                    <div className="flex items-center gap-4">
+                      <h3 className="font-headings text-lg font-bold text-text-primary">Recent Analyses</h3>
+                      <ClearHistoryButton />
+                    </div>
                     <Link href="/dashboard/my-videos" className="text-xs text-accent font-bold hover:underline flex items-center gap-1 group">
                       View all <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
                     </Link>

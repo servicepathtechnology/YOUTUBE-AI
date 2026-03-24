@@ -1,5 +1,7 @@
-gTTS
+elevenlabs
 flask
-pydub
+requests
 edge-tts
+gTTS
+pydub
 aiohttp

@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { Card, CardContent } from '@/components/ui/card'
 import { AnalyzeVideoForm } from '@/components/AnalyzeVideoForm'
 import { VideoCard } from '@/components/VideoCard'
+import { ClearHistoryButton } from '@/components/ClearHistoryButton'
 import { Video, FileText, Clock, ArrowRight } from 'lucide-react'
 
 export default async function DashboardPage() {
@@ -77,8 +78,11 @@ export default async function DashboardPage() {
       {/* Recent Videos Section */}
       <section className="space-y-6">
         <div className="flex items-center justify-between">
-          <h3 className="font-headings text-xl font-bold text-text-primary">Recent Videos</h3>
-          <Link href="#" className="text-xs text-accent font-bold hover:underline flex items-center gap-1 group">
+          <div className="flex items-center gap-4">
+            <h3 className="font-headings text-xl font-bold text-text-primary">Recent Videos</h3>
+            {videos && videos.length > 0 && <ClearHistoryButton />}
+          </div>
+          <Link href="/dashboard/my-videos" className="text-xs text-accent font-bold hover:underline flex items-center gap-1 group">
             View all <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
           </Link>
         </div>
