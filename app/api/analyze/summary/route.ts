@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server'
-import { GoogleGenerativeAI } from '@google/generative-ai'
+import { geminiModel } from '@/lib/gemini'
 
 export async function POST(req: Request) {
-  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "dummy")
   try {
     const { transcript } = await req.json()
 
@@ -14,51 +13,31 @@ export async function POST(req: Request) {
 Format the output strictly as JSON with this exact structure:
 {
   "summary": "String value of short summary",
-  "bulletPoints": ["point 1", "point 2"],
-  "keyConcepts": "String value explaining key learning concepts"
+  "bullet_points": ["point 1", "point 2"],
+  "key_concepts": ["concept 1", "concept 2"]
 }
 
 Transcript:
 ${transcript.substring(0, 15000)}`
 
-    const model = genAI.getGenerativeModel({
-      model: "gemini-flash-latest",
-      generationConfig: {
-        maxOutputTokens: 1024,
-      }
-    })
-
-    const result = await model.generateContent({
-      contents: [{ role: "user", parts: [{ text: prompt }] }],
-      generationConfig: {
-        temperature: 0.1,
-      }
-    })
-
+    const result = await geminiModel.generateContent(prompt)
     let rawContent = result.response.text()
-    console.log("Gemini Raw Response length:", rawContent.length)
 
-    // Robust JSON extraction: look for the first { and last }
-    let data;
+    let data: any
     try {
       const jsonMatch = rawContent.match(/\{[\s\S]*\}/)
       if (!jsonMatch) throw new Error("No JSON found in response")
       data = JSON.parse(jsonMatch[0])
-    } catch (parseError) {
-      console.error("Failed to parse Gemini JSON. Raw content:", rawContent)
-      // Fallback: try to fix common JSON issues like unescaped newlines in strings
-      try {
-          const cleaned = rawContent.replace(/\n/g, "\\n").match(/\{[\s\S]*\}/)
-          if (cleaned) data = JSON.parse(cleaned[0])
-          else throw parseError
-      } catch (e) {
-          throw new Error("Failed to parse the JSON response from Gemini model.")
-      }
+    } catch {
+      const cleaned = rawContent.replace(/\n/g, "\\n").match(/\{[\s\S]*\}/)
+      if (cleaned) data = JSON.parse(cleaned[0])
+      else throw new Error("Failed to parse JSON response from Gemini.")
     }
 
-    return NextResponse.json({ 
-      summary: (data.summary || "") + "\n\nKey Concepts:\n" + (data.keyConcepts || ""), 
-      bulletPoints: data.bulletPoints || []
+    return NextResponse.json({
+      summary: data.summary || "",
+      bullet_points: data.bullet_points || data.bulletPoints || [],
+      key_concepts: data.key_concepts || data.keyConcepts || [],
     })
   } catch (error: any) {
     console.error("Gemini API Error in Summary Route:", error)

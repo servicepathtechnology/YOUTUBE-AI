@@ -3,9 +3,16 @@ import { createClient } from "@/utils/supabase/server";
 import { geminiModel } from "@/lib/gemini";
 import { v4 as uuidv4 } from "uuid";
 
+// Map app language to edge-tts lang code
+const LANG_CODE: Record<string, string> = {
+  ENGLISH: "en",
+  TELUGU:  "te",
+  HINDI:   "hi",
+};
+
 export async function POST(req: Request) {
   try {
-    const { video_id, duration = 2, language = 'ENGLISH' } = await req.json();
+    const { video_id, duration = 2, language = "ENGLISH" } = await req.json();
     const supabase = await createClient();
 
     const { data: video, error: fetchError } = await supabase
@@ -22,105 +29,95 @@ export async function POST(req: Request) {
       return NextResponse.json({ audio_url: video.podcast_audio_url });
     }
 
-    // Define target character count based on duration (roughly 900-1000 chars per minute of speech)
     const targetChars = duration * 1000;
+    const lang = language.toUpperCase();
 
-    // 1. Generate Podcast Script using Gemini (Step 6)
+    // 1. Generate podcast script via Gemini in the selected language
     const scriptPrompt = `
-      You are a professional podcast script writer. Convert the following summary into a high-quality "Deep Dive" podcast episode in ENGLISH that lasts approximately ${duration} minutes.
-      
-      CRITICAL: The entire podcast script (Host and Expert dialogue) MUST be in ENGLISH language only.
-      
-      Requirements:
-      1. Use ONLY two speakers: "Host" and "Expert".
-      2. The "Host" introduces the topic and asks insightful questions in ENGLISH.
-      3. The "Expert" explains the details from the summary using professional but accessible language in ENGLISH.
-      4. STICK STRICTLY to the information provided in the summary. If the summary is in another language, translate it accurately to ENGLISH for the script.
-      5. Format the output as:
-         Host: [speech in ENGLISH]
-         Expert: [speech in ENGLISH]
-      6. Keep it professional, informative, and exactly like a real-time expert podcast.
-      7. Target a script length of approximately ${targetChars} characters to ensure it lasts ${duration} minutes.
-      8. DO NOT use any markdown formatting like asterisks (**), hashtags (#), or underscores (_). 
-      9. DO NOT include any labels like "Host:" or "Expert:" inside the actual speech text.
-      10. Use only plain text.
+You are writing a script for a real podcast episode. The ENTIRE script must be written in ${lang} language only.
 
-      Summary of the Video Content:
-      ${video.summary}
-    `;
+Two speakers:
+- Host: female, warm and curious, asks sharp questions
+- Expert: male, knowledgeable and clear, explains with real-world examples
 
-    const scriptResult = await geminiModel.generateContent(scriptPrompt);
-    let podcastScript = scriptResult.response.text();
+STRICT RULES — follow every one:
+1. Every single line must start with exactly "Host:" or "Expert:" — nothing else before it.
+2. Each turn is 1 to 3 short sentences only. Keep it punchy and conversational.
+3. Do NOT write any intro like "Welcome", "Hello everyone", "Thanks for joining" — start directly on the topic.
+4. Do NOT write any outro like "Thanks for listening", "See you next time".
+5. Do NOT use asterisks (*), hashtags (#), underscores (_), brackets [], parentheses (), or any markdown.
+6. Do NOT write stage directions, emotions, or actions like (laughs), [music], *pauses*, etc.
+7. Do NOT use the words "asterisks", "ashtaros", or any meta-commentary about formatting.
+8. Write ONLY plain spoken words — exactly what the speaker says out loud.
+9. The entire conversation must be in ${lang} language.
+10. Target approximately ${targetChars} characters total.
 
-    // Limit podcast script length to slightly above target to avoid extreme overflows
-    const maxChars = targetChars + 500;
-    if (podcastScript.length > maxChars) {
-      podcastScript = podcastScript.substring(0, maxChars);
+Summary to convert:
+${video.summary}
+`.trim();
+
+    let podcastScript = "";
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        const result = await geminiModel.generateContent(scriptPrompt);
+        podcastScript = result.response.text();
+        break;
+      } catch (err: any) {
+        const isRetryable = err?.status === 503 || err?.status === 429 ||
+          err?.message?.includes("503") || err?.message?.includes("429");
+        if (isRetryable && attempt < 3) {
+          await new Promise((r) => setTimeout(r, attempt * 2000));
+          continue;
+        }
+        throw err;
+      }
     }
 
-    // 2. Generate Audio with Python gTTS Service (Step 5 & 7)
-    let baseUrl = process.env.TTS_SERVICE_URL || "http://localhost:5001";
-    // Ensure URL has /generate-podcast endpoint
-    const pythonServiceUrl = baseUrl.endsWith("/generate-podcast") 
-      ? baseUrl 
-      : `${baseUrl.replace(/\/$/, "")}/generate-podcast`;
-    
-    // Podcast is ALWAYS in English
-    const langCode = 'en';
+    if (podcastScript.length > targetChars + 500) {
+      podcastScript = podcastScript.substring(0, targetChars + 500);
+    }
 
-    const ttsResponse = await fetch(pythonServiceUrl, {
+    // 2. Send to Python TTS service with correct language code
+    const baseUrl = process.env.TTS_SERVICE_URL || "http://localhost:5001";
+    const ttsUrl = `${baseUrl.replace(/\/$/, "")}/generate-podcast`;
+    const langCode = LANG_CODE[lang] ?? "en";
+
+    const ttsResponse = await fetch(ttsUrl, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ 
-        text: podcastScript,
-        lang: langCode
-      }),
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: podcastScript, lang: langCode }),
     });
 
     if (!ttsResponse.ok) {
       const errorData = await ttsResponse.json().catch(() => ({}));
-      throw new Error(errorData.error || "Failed to generate audio from Python service");
+      throw new Error(errorData.error || "Failed to generate audio from TTS service");
     }
 
-    const audioArrayBuffer = await ttsResponse.arrayBuffer();
-    const audioBuffer = Buffer.from(audioArrayBuffer);
+    const audioBuffer = Buffer.from(await ttsResponse.arrayBuffer());
 
-    // 3. Upload to Supabase Storage (Step 8)
+    // 3. Upload to Supabase Storage
     const fileName = `podcast-${video_id}-${uuidv4()}.mp3`;
-    const { data: uploadData, error: uploadError } = await supabase
-      .storage
+    const { error: uploadError } = await supabase.storage
       .from("podcasts")
       .upload(fileName, audioBuffer, {
         contentType: "audio/mpeg",
         cacheControl: "3600",
-        upsert: false
+        upsert: false,
       });
 
     if (uploadError) {
-      console.error("Storage upload error:", uploadError);
-      
-      // Check if it's a "bucket not found" error to provide a better message
       if (uploadError.message.includes("not found") || (uploadError as any).status === 404) {
         throw new Error("Supabase Storage bucket 'podcasts' not found. Please create it in your Supabase dashboard.");
       }
-      
-      throw new Error(`Failed to upload podcast to storage: ${uploadError.message}`);
+      throw new Error(`Failed to upload podcast: ${uploadError.message}`);
     }
 
-    // 4. Get Public URL
-    const { data: { publicUrl } } = supabase
-      .storage
-      .from("podcasts")
-      .getPublicUrl(fileName);
+    // 4. Get public URL & update DB
+    const { data: { publicUrl } } = supabase.storage.from("podcasts").getPublicUrl(fileName);
 
-    // 5. Update Database
     const { error: updateError } = await supabase
       .from("videos")
-      .update({
-        podcast_audio_url: publicUrl
-      })
+      .update({ podcast_audio_url: publicUrl })
       .eq("id", video_id);
 
     if (updateError) throw updateError;

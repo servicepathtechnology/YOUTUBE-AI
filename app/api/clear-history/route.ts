@@ -1,29 +1,37 @@
-import { NextResponse } from "next/server";
-import { createClient } from "@/utils/supabase/server";
+import { NextResponse } from 'next/server'
+import { createClient } from '@/utils/supabase/server'
 
-export async function POST(req: Request) {
+export async function POST() {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Delete all chats for this user's videos first (foreign key)
+    const { data: videos } = await supabase
+      .from('videos')
+      .select('id')
+      .eq('user_id', user.id)
+
+    if (videos && videos.length > 0) {
+      const videoIds = videos.map((v) => v.id)
+      await supabase.from('chats').delete().in('video_id', videoIds)
     }
 
     // Delete all videos for this user
-    const { error: deleteError } = await supabase
-      .from("videos")
+    const { error } = await supabase
+      .from('videos')
       .delete()
-      .eq("user_id", user.id);
+      .eq('user_id', user.id)
 
-    if (deleteError) {
-      console.error("Error clearing history:", deleteError);
-      return NextResponse.json({ error: "Failed to clear history" }, { status: 500 });
-    }
+    if (error) throw error
 
-    return NextResponse.json({ message: "History cleared successfully" });
+    return NextResponse.json({ success: true })
   } catch (error: any) {
-    console.error("Clear History Error:", error);
-    return NextResponse.json({ error: error.message || "Failed to clear history" }, { status: 500 });
+    console.error('Clear History Error:', error)
+    return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }

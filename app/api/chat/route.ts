@@ -45,7 +45,7 @@ export async function POST(req: Request) {
       Video Summary (in ${language}): ${video.summary}
 
       Transcript Context:
-      ${video.transcript.substring(0, 15000)} // Limiting to stay within typical token bounds while being comprehensive
+      ${video.transcript.substring(0, 15000)}
 
       Previous Conversation History:
       ${historyText}

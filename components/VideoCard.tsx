@@ -121,7 +121,7 @@ export function VideoCard({ video }: VideoCardProps) {
             <span className="text-[11px] text-text-muted font-medium uppercase tracking-wider">YouTube Video</span>
             <div className="w-1 h-1 rounded-full bg-border"></div>
             <span className="text-[11px] text-text-muted">
-              {new Date(video.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+              {new Date(video.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
             </span>
           </div>
         </div>

@@ -1,6 +1,6 @@
 "use client"
 import { createClient } from '@/utils/supabase/client'
-import { redirect, usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { LogoutButton } from '@/components/LogoutButton'
@@ -22,12 +22,14 @@ export default function DashboardLayout({
   const [user, setUser] = useState<any>(null)
   const supabase = createClient()
   const pathname = usePathname()
+  const router = useRouter()
 
   useEffect(() => {
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
-        redirect('/login')
+        router.push('/login')
+        return
       }
       setUser(user)
     }
