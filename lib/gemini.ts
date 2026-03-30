@@ -8,6 +8,8 @@ if (!apiKey) {
 
 const genAI = new GoogleGenerativeAI(apiKey);
 
-export const geminiModel = genAI.getGenerativeModel(
-  { model: "gemini-2.5-flash" }
-);
+// Used for summaries — best quality
+export const geminiModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+// Used for podcast scripts & chat — faster, separate quota pool
+export const geminiFastModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });

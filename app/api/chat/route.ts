@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
-import { geminiModel } from "@/lib/gemini";
+import { geminiFastModel } from "@/lib/gemini";
 
 export async function POST(req: Request) {
   try {
@@ -71,7 +71,7 @@ export async function POST(req: Request) {
     });
 
     // Get response from Gemini
-    const result = await geminiModel.generateContent(prompt);
+    const result = await geminiFastModel.generateContent(prompt);
     const answer = result.response.text();
 
     // Save assistant message

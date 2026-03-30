@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
-import { geminiModel } from "@/lib/gemini";
+import { geminiFastModel } from "@/lib/gemini";
 import { v4 as uuidv4 } from "uuid";
 
 // Map app language to edge-tts lang code
@@ -59,7 +59,7 @@ ${video.summary}
     let podcastScript = "";
     for (let attempt = 1; attempt <= 3; attempt++) {
       try {
-        const result = await geminiModel.generateContent(scriptPrompt);
+        const result = await geminiFastModel.generateContent(scriptPrompt);
         podcastScript = result.response.text();
         break;
       } catch (err: any) {

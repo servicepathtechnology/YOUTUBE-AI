@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
-import { geminiModel } from "@/lib/gemini";
+import { geminiFastModel, geminiModel } from "@/lib/gemini";
 import { chunkText } from "@/utils/textChunker";
 
 export async function POST(req: Request) {
@@ -78,7 +78,19 @@ export async function POST(req: Request) {
       `;
     }
 
-    const result = await geminiModel.generateContent(prompt);
+    // Try primary model first, fall back to lite if quota exceeded
+    let result;
+    try {
+      result = await geminiModel.generateContent(prompt);
+    } catch (err: any) {
+      const isQuota = err?.status === 429 || err?.message?.includes("429");
+      if (isQuota) {
+        console.warn("gemini-2.5-flash quota hit, falling back to gemini-2.5-flash-lite");
+        result = await geminiFastModel.generateContent(prompt);
+      } else {
+        throw err;
+      }
+    }
     const responseText = result.response.text();
     
     let summary = "";
