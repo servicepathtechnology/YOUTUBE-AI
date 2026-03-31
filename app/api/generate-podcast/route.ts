@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 import { geminiFastModel } from "@/lib/gemini";
 import { v4 as uuidv4 } from "uuid";
+import { appLangToCode } from "@/lib/detectLanguage";
 
 // Map app language to edge-tts lang code
 const LANG_CODE: Record<string, string> = {
@@ -25,12 +26,16 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Video not found" }, { status: 404 });
     }
 
-    if (video.podcast_audio_url) {
-      return NextResponse.json({ audio_url: video.podcast_audio_url });
-    }
-
     const targetChars = duration * 1000;
     const lang = language.toUpperCase();
+
+    if (video.podcast_audio_url) {
+      return NextResponse.json({
+        audio_url: video.podcast_audio_url,
+        podcast_script: video.podcast_script ?? "",
+        language: video.language ?? appLangToCode(lang),
+      });
+    }
 
     // 1. Generate podcast script via Gemini in the selected language
     const scriptPrompt = `
@@ -80,12 +85,12 @@ ${video.summary}
     // 2. Send to Python TTS service with correct language code
     const baseUrl = process.env.TTS_SERVICE_URL || "http://localhost:5001";
     const ttsUrl = `${baseUrl.replace(/\/$/, "")}/generate-podcast`;
-    const langCode = LANG_CODE[lang] ?? "en";
+    const ttsLangCode = LANG_CODE[lang] ?? "en";
 
     const ttsResponse = await fetch(ttsUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: podcastScript, lang: langCode }),
+      body: JSON.stringify({ text: podcastScript, lang: ttsLangCode }),
     });
 
     if (!ttsResponse.ok) {
@@ -112,17 +117,23 @@ ${video.summary}
       throw new Error(`Failed to upload podcast: ${uploadError.message}`);
     }
 
-    // 4. Get public URL & update DB
+    // 4. Get public URL and update DB
     const { data: { publicUrl } } = supabase.storage.from("podcasts").getPublicUrl(fileName);
+
+    const langCode = appLangToCode(lang);
 
     const { error: updateError } = await supabase
       .from("videos")
-      .update({ podcast_audio_url: publicUrl })
+      .update({
+        podcast_audio_url: publicUrl,
+        podcast_script: podcastScript,
+        language: langCode,
+      })
       .eq("id", video_id);
 
     if (updateError) throw updateError;
 
-    return NextResponse.json({ audio_url: publicUrl });
+    return NextResponse.json({ audio_url: publicUrl, podcast_script: podcastScript, language: langCode });
   } catch (error: any) {
     console.error("Generate Podcast Error:", error);
     return NextResponse.json({ error: error.message || "Failed to generate podcast" }, { status: 500 });

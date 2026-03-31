@@ -68,9 +68,6 @@ export function ProcessingScreen({ currentStep: csProp, stepProgress: spProp, vi
   const [msgVisible, setMsgVisible] = useState(true)
   const prevStepRef = useRef(-1)
 
-  /* Countdown */
-  const [secsLeft, setSecsLeft] = useState(90)
-
   /* ── Subtitle cycling ── */
   useEffect(() => {
     setMsgIdx(0)
@@ -88,15 +85,6 @@ export function ProcessingScreen({ currentStep: csProp, stepProgress: spProp, vi
   useEffect(() => {
     prevStepRef.current = currentStep
   }, [currentStep])
-
-  /* ── Countdown ── */
-  useEffect(() => {
-    const remaining = STEP_DURATIONS.slice(currentStep).reduce((a, b) => a + b, 0)
-    const adjusted  = Math.round(remaining * (1 - stepProgress / 100))
-    setSecsLeft(Math.max(1, adjusted))
-    const id = setInterval(() => setSecsLeft(s => Math.max(0, s - 1)), 1000)
-    return () => clearInterval(id)
-  }, [currentStep, stepProgress])
 
   /* ── onComplete ── */
   useEffect(() => {
@@ -420,13 +408,32 @@ export function ProcessingScreen({ currentStep: csProp, stepProgress: spProp, vi
             </div>
           </div>
 
-          {/* Countdown */}
-          <div style={{ textAlign: "right", minWidth: 60 }}>
-            <div style={{ fontSize: 30, fontWeight: 200, color: "rgba(255,255,255,0.85)", lineHeight: 1, letterSpacing: "-0.03em" }}>
-              {secsLeft}
-            </div>
-            <div style={{ fontSize: 9, fontWeight: 500, color: "rgba(255,255,255,0.3)", letterSpacing: "0.1em", textTransform: "uppercase", marginTop: 2 }}>
-              sec left
+          {/* Overall % ring */}
+          <div style={{ position: "relative", width: 56, height: 56, flexShrink: 0 }}>
+            <svg width="56" height="56" viewBox="0 0 56 56" style={{ transform: "rotate(-90deg)" }}>
+              {/* Track */}
+              <circle cx="28" cy="28" r="22" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="4" />
+              {/* Fill */}
+              <circle
+                cx="28" cy="28" r="22" fill="none"
+                stroke="url(#pctGrad)" strokeWidth="4"
+                strokeLinecap="round"
+                strokeDasharray={`${2 * Math.PI * 22}`}
+                strokeDashoffset={`${2 * Math.PI * 22 * (1 - overallPct / 100)}`}
+                style={{ transition: "stroke-dashoffset 0.6s ease" }}
+              />
+              <defs>
+                <linearGradient id="pctGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#6366f1" />
+                  <stop offset="100%" stopColor="#06b6d4" />
+                </linearGradient>
+              </defs>
+            </svg>
+            {/* Number in centre */}
+            <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.9)", lineHeight: 1, letterSpacing: "-0.02em" }}>
+                {overallPct}%
+              </span>
             </div>
           </div>
         </div>

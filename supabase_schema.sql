@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS videos (
     bullet_points TEXT[],
     key_concepts TEXT[],
     podcast_audio_url TEXT,
+    podcast_script TEXT,
     language TEXT DEFAULT 'ENGLISH',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -54,3 +55,8 @@ CREATE POLICY "Users can delete their own chats" ON chats
 
 -- Storage bucket for podcasts
 -- You will need to create a bucket named 'podcasts' in the Supabase UI and set it to public or configure policies.
+
+-- Migration: Add captions and language code support
+ALTER TABLE videos ADD COLUMN IF NOT EXISTS captions JSONB;
+-- Update language column to store ISO codes ('en', 'hi', 'te') going forward
+-- Existing rows with 'ENGLISH'/'HINDI'/'TELUGU' remain valid; app normalises on read

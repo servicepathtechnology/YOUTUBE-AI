@@ -52,7 +52,10 @@ export default async function VideoPage({ params }: { params: Promise<{ id: stri
 
         {/* Podcast Player */}
         {video.podcast_audio_url && (
-          <PodcastPlayer audioUrl={video.podcast_audio_url} />
+          <PodcastPlayer
+            audioUrl={video.podcast_audio_url}
+            language={video.language ?? "en"}
+          />
         )}
 
         {/* Summary */}
