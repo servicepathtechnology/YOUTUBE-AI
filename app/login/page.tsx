@@ -59,15 +59,16 @@ export default function LoginPage() {
            }}></div>
       <div className="absolute inset-0 z-0" 
            style={{
-             background: 'radial-gradient(ellipse 80% 50% at 50% -10%, rgba(99, 102, 241, 0.15), transparent)'
+             background: 'radial-gradient(ellipse 80% 50% at 50% -10%, rgba(255, 92, 0, 0.12), transparent)'
            }}></div>
 
       <Card className="relative z-10 w-full max-w-[420px] bg-bg-card border-border shadow-elevated p-8">
         <div className="text-center mb-8">
-          <Link href="/" className="inline-block mb-4">
-            <h2 className="font-headings font-bold text-2xl text-text-primary tracking-tight">
-              VideoTutor <span className="text-accent">AI</span>
-            </h2>
+          <Link href="/" className="inline-flex items-center gap-2 mb-4">
+            <div className="w-7 h-7 rounded-lg bg-accent flex items-center justify-center">
+              <svg className="w-3.5 h-3.5 text-white fill-white" viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+            </div>
+            <h2 className="font-headings font-bold text-2xl text-text-primary tracking-tight">Actify</h2>
           </Link>
           <p className="text-sm text-text-secondary">Welcome back</p>
         </div>
@@ -112,7 +113,7 @@ export default function LoginPage() {
             />
           </div>
 
-          <Button className="w-full h-11 text-[15px] font-semibold" type="submit" disabled={loading}>
+          <Button className="w-full h-11 text-[15px] font-semibold bg-accent hover:bg-accent-hover text-white" type="submit" disabled={loading}>
             {loading ? "Signing in..." : "Sign In"}
           </Button>
         </form>

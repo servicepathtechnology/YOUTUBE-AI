@@ -1,11 +1,11 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 import { extractYoutubeId } from "@/utils/extractYoutubeId";
 import { fetchTranscript } from "@/utils/transcriptFetcher";
 
 export async function POST(req: Request) {
   try {
-    const { youtube_url, language = 'ENGLISH' } = await req.json();
+    const { youtube_url } = await req.json();
     const videoId = extractYoutubeId(youtube_url);
 
     if (!videoId) {
@@ -19,29 +19,29 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Check if video already exists for this user with the same language
+    // One record per video per user (language-agnostic now)
     const { data: existingVideo } = await supabase
       .from("videos")
       .select("*")
       .eq("video_id", videoId)
       .eq("user_id", user.id)
-      .eq("language", language)
       .single();
 
     if (existingVideo && existingVideo.transcript) {
-      return NextResponse.json({ 
-        message: "Video already processed", 
+      return NextResponse.json({
+        message: "Video already processed",
         video: existingVideo,
-        status: "cached" 
+        status: "cached",
       });
     }
 
-    // Fetch video info (title, thumbnail) using oembed
+    // Fetch video title/thumbnail via oEmbed
     let title = "YouTube Video";
     let thumbnail = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
-    
     try {
-      const oembedRes = await fetch(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`);
+      const oembedRes = await fetch(
+        `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`
+      );
       if (oembedRes.ok) {
         const oembedData = await oembedRes.json();
         title = oembedData.title;
@@ -50,10 +50,9 @@ export async function POST(req: Request) {
       console.error("Error fetching oembed:", e);
     }
 
-    // Fetch transcript
+    // Fetch transcript (language-agnostic)
     const transcript = await fetchTranscript(videoId);
 
-    // Store in database
     const { data: newVideo, error: insertError } = await supabase
       .from("videos")
       .insert({
@@ -63,19 +62,17 @@ export async function POST(req: Request) {
         title,
         thumbnail,
         transcript,
-        language,
+        language: "MULTILANG",
       })
       .select()
       .single();
 
-    if (insertError) {
-      throw insertError;
-    }
+    if (insertError) throw insertError;
 
-    return NextResponse.json({ 
-      message: "Transcript fetched and stored", 
+    return NextResponse.json({
+      message: "Transcript fetched and stored",
       video: newVideo,
-      status: "new"
+      status: "new",
     });
   } catch (error: any) {
     console.error("Analyze Video Error:", error);

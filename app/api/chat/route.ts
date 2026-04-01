@@ -1,10 +1,10 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 import { geminiFastModel } from "@/lib/gemini";
 
 export async function POST(req: Request) {
   try {
-    const { video_id, question } = await req.json();
+    const { video_id, question, language: clientLanguage } = await req.json();
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
@@ -14,7 +14,7 @@ export async function POST(req: Request) {
 
     const { data: video, error: fetchError } = await supabase
       .from("videos")
-      .select("transcript, summary, title, language")
+      .select("transcript, summary, title, language, multilang_content")
       .eq("id", video_id)
       .single();
 
@@ -22,9 +22,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Video not found" }, { status: 404 });
     }
 
-    const language = video.language || 'ENGLISH';
+    // Use language from client (user's current selection), fallback to stored
+    const language = clientLanguage || video.language || 'ENGLISH';
 
-    // Fetch previous chat history for context (limit to last 10 messages)
+    // Get the summary in the selected language if multilang available
+    const multilang = video.multilang_content || {};
+    const langSummary = multilang[language]?.summary || video.summary || '';
+
     const { data: history } = await supabase
       .from("chats")
       .select("role, message")
@@ -32,56 +36,52 @@ export async function POST(req: Request) {
       .order("created_at", { ascending: true })
       .limit(10);
 
-    const historyText = history?.map(h => `${h.role === 'user' ? 'User' : 'Assistant'}: ${h.message}`).join('\n') || '';
+    const historyText = history
+      ?.map(h => `${h.role === 'user' ? 'User' : 'Assistant'}: ${h.message}`)
+      .join('\n') || '';
 
-    // Prepare prompt
     const prompt = `
-      You are an AI tutor specialized in the following video content.
-      Your goal is to help the user understand the video better by answering their questions accurately and concisely.
+You are an AI tutor specialized in the following video content.
+Your goal is to help the user understand the video better by answering their questions accurately and concisely.
 
-      CRITICAL: Your entire response MUST be in ${language} language.
+CRITICAL: Your ENTIRE response MUST be in ${language} language only. Do not mix languages.
 
-      Video Title: ${video.title}
-      Video Summary (in ${language}): ${video.summary}
+Video Title: ${video.title}
+Video Summary: ${langSummary}
 
-      Transcript Context:
-      ${video.transcript.substring(0, 15000)}
+Transcript Context:
+${(video.transcript || '').substring(0, 15000)}
 
-      Previous Conversation History:
-      ${historyText}
+Previous Conversation:
+${historyText}
 
-      Instructions:
-      1. Answer the user's question based on the transcript and summary provided.
-      2. If the answer is not explicitly in the transcript but can be reasonably inferred from the context of the video, provide a helpful response.
-      3. If the user asks for a general explanation or overview, use the summary to provide a high-level answer.
-      4. If the question is completely unrelated to the video, politely state that you are specialized in this specific video's content.
-      5. Keep your tone encouraging, educational, and professional.
-      6. ALL output must be in ${language}.
+Instructions:
+1. Answer based on the transcript and summary.
+2. If not explicitly in the transcript but can be inferred, provide a helpful response.
+3. If completely unrelated to the video, politely say you are specialized in this video's content.
+4. Keep tone encouraging, educational, and professional.
+5. ALL output must be in ${language} language.
 
-      Current User Question:
-      ${question}
-    `;
+User Question: ${question}
+    `.trim();
 
-    // Save user message
     await supabase.from("chats").insert({
       video_id,
       user_id: user.id,
       role: "user",
-      message: question
+      message: question,
     });
 
-    // Get response from Gemini
     const result = await geminiFastModel.generateContent(prompt);
     const answer = result.response.text();
 
-    // Save assistant message
     const { data: chatEntry, error: chatError } = await supabase
       .from("chats")
       .insert({
         video_id,
         user_id: user.id,
         role: "assistant",
-        message: answer
+        message: answer,
       })
       .select()
       .single();
@@ -91,6 +91,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ answer, chat: chatEntry });
   } catch (error: any) {
     console.error("Chat Error:", error);
-    return NextResponse.json({ error: error.message || "Failed to get response from AI tutor" }, { status: 500 });
+    return NextResponse.json({ error: error.message || "Failed to get response" }, { status: 500 });
   }
 }

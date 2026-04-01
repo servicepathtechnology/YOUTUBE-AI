@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
@@ -9,22 +9,22 @@
   --color-background: var(--bg-primary);
   --color-foreground: var(--text-primary);
   --font-sans: 'DM Sans', sans-serif;
-  --font-headings: 'Bricolage Grotesque', sans-serif;
+  --font-headings: 'Syne', sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 
-  --color-bg-primary: #0A0A0F;
-  --color-bg-secondary: #111118;
-  --color-bg-card: #16161F;
-  --color-bg-card-hover: #1C1C28;
-  --color-border: #2A2A3A;
-  --color-border-subtle: #1E1E2A;
-  --color-accent: #6366F1;
-  --color-accent-hover: #4F46E5;
-  --color-accent-glow: rgba(99, 102, 241, 0.15);
-  --color-accent-secondary: #06B6D4;
-  --color-text-primary: #F1F0FF;
-  --color-text-secondary: #8B8BA7;
-  --color-text-muted: #52526E;
+  --color-bg-primary: #0A0F1E;
+  --color-bg-secondary: #0D1426;
+  --color-bg-card: #111827;
+  --color-bg-card-hover: #1a2235;
+  --color-border: #1e2d45;
+  --color-border-subtle: #162035;
+  --color-accent: #FF5C00;
+  --color-accent-hover: #e05200;
+  --color-accent-glow: rgba(255, 92, 0, 0.15);
+  --color-accent-secondary: #FF8C42;
+  --color-text-primary: #F8FAFC;
+  --color-text-secondary: #94A3B8;
+  --color-text-muted: #4B5563;
   --color-success: #10B981;
   --color-error: #EF4444;
 
@@ -35,25 +35,25 @@
 }
 
 :root {
-  --bg-primary: #0A0A0F;
-  --bg-secondary: #111118;
-  --bg-card: #16161F;
-  --bg-card-hover: #1C1C28;
-  --border: #2A2A3A;
-  --border-subtle: #1E1E2A;
-  --accent: #6366F1;
-  --accent-hover: #4F46E5;
-  --accent-glow: rgba(99, 102, 241, 0.15);
-  --accent-secondary: #06B6D4;
-  --text-primary: #F1F0FF;
-  --text-secondary: #8B8BA7;
-  --text-muted: #52526E;
+  --bg-primary: #0A0F1E;
+  --bg-secondary: #0D1426;
+  --bg-card: #111827;
+  --bg-card-hover: #1a2235;
+  --border: #1e2d45;
+  --border-subtle: #162035;
+  --accent: #FF5C00;
+  --accent-hover: #e05200;
+  --accent-glow: rgba(255, 92, 0, 0.15);
+  --accent-secondary: #FF8C42;
+  --text-primary: #F8FAFC;
+  --text-secondary: #94A3B8;
+  --text-muted: #4B5563;
   --success: #10B981;
   --error: #EF4444;
 
-  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.4), 0 0 0 1px var(--border);
-  --shadow-glow: 0 0 40px rgba(99, 102, 241, 0.12);
-  --shadow-elevated: 0 8px 32px rgba(0, 0, 0, 0.6);
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.5), 0 0 0 1px var(--border);
+  --shadow-glow: 0 0 40px rgba(255, 92, 0, 0.15);
+  --shadow-elevated: 0 8px 32px rgba(0, 0, 0, 0.7);
 
   --background: var(--bg-primary);
   --foreground: var(--text-primary);
@@ -94,13 +94,11 @@
     @apply font-headings font-bold;
   }
 
-  /* Selection color */
   ::selection {
     background: var(--accent-glow);
     color: var(--accent);
   }
 
-  /* Scrollbars (webkit) */
   ::-webkit-scrollbar {
     width: 6px;
   }
@@ -118,7 +116,6 @@
     background: var(--text-muted);
   }
 
-  /* Focus-visible outlines */
   :focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: 2px;
@@ -144,6 +141,43 @@
     background-size: 200% 100%;
     animation: shimmer 1.5s infinite;
   }
+
+  .animate-fade-up {
+    animation: fadeUp 0.6s ease forwards;
+    opacity: 0;
+  }
+
+  .animate-fade-up-delay-1 {
+    animation-delay: 0.1s;
+  }
+
+  .animate-fade-up-delay-2 {
+    animation-delay: 0.2s;
+  }
+
+  .animate-fade-up-delay-3 {
+    animation-delay: 0.35s;
+  }
+
+  .animate-fade-up-delay-4 {
+    animation-delay: 0.5s;
+  }
+
+  .btn-shimmer {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-shimmer::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 60%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+    animation: shimmerSweep 2.5s infinite;
+  }
 }
 
 @keyframes shimmer {
@@ -153,6 +187,28 @@
 
   100% {
     background-position: -200% 0;
+  }
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes shimmerSweep {
+  0% {
+    left: -100%;
+  }
+
+  100% {
+    left: 200%;
   }
 }
 
@@ -202,46 +258,6 @@
   }
 }
 
-@keyframes edgePulse {
-
-  0%,
-  100% {
-    stroke-opacity: 0.3;
-  }
-
-  50% {
-    stroke-opacity: 0.9;
-  }
-}
-
-@keyframes nodePop {
-  0% {
-    transform: scale(0);
-    opacity: 0;
-  }
-
-  60% {
-    transform: scale(1.3);
-  }
-
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
-
-@keyframes ripple {
-  0% {
-    r: 10;
-    opacity: 0.7;
-  }
-
-  100% {
-    r: 22;
-    opacity: 0;
-  }
-}
-
 @keyframes speakBar {
 
   0%,
@@ -268,32 +284,13 @@
   }
 }
 
-@keyframes blobDrift {
-
-  0%,
-  100% {
-    transform: translate(0, 0) scale(1);
+@keyframes orbitSpin {
+  from {
+    transform: rotate(0deg);
   }
 
-  33% {
-    transform: translate(20px, -15px) scale(1.05);
-  }
-
-  66% {
-    transform: translate(-10px, 20px) scale(0.95);
-  }
-}
-
-/* ── ProcessingScreen character animations ── */
-@keyframes codeLine {
-
-  0%,
-  100% {
-    opacity: 0.4;
-  }
-
-  50% {
-    opacity: 1;
+  to {
+    transform: rotate(360deg);
   }
 }
 
@@ -309,192 +306,36 @@
   }
 }
 
-@keyframes eyeGlow {
+@keyframes countUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes progressBar {
+  from {
+    width: 0%;
+  }
+
+  to {
+    width: 100%;
+  }
+}
+
+@keyframes pulse-glow {
 
   0%,
   100% {
-    opacity: 0.7;
+    box-shadow: 0 0 20px rgba(255, 92, 0, 0.3);
   }
 
   50% {
-    opacity: 1;
-  }
-}
-
-@keyframes armLeft {
-  from {
-    transform: rotate(-8deg);
-  }
-
-  to {
-    transform: rotate(8deg);
-  }
-}
-
-@keyframes armRight {
-  from {
-    transform: rotate(8deg);
-  }
-
-  to {
-    transform: rotate(-8deg);
-  }
-}
-
-@keyframes floatDot {
-  from {
-    transform: translateY(0);
-    opacity: 0.4;
-  }
-
-  to {
-    transform: translateY(-14px);
-    opacity: 0.9;
-  }
-}
-
-@keyframes runBounce {
-  from {
-    transform: translateY(0);
-  }
-
-  to {
-    transform: translateY(-6px);
-  }
-}
-
-@keyframes armSwingL {
-  from {
-    transform: rotate(-20deg);
-  }
-
-  to {
-    transform: rotate(20deg);
-  }
-}
-
-@keyframes armSwingR {
-  from {
-    transform: rotate(20deg);
-  }
-
-  to {
-    transform: rotate(-20deg);
-  }
-}
-
-@keyframes legL {
-  from {
-    transform: rotate(-25deg);
-  }
-
-  to {
-    transform: rotate(15deg);
-  }
-}
-
-@keyframes legR {
-  from {
-    transform: rotate(15deg);
-  }
-
-  to {
-    transform: rotate(-25deg);
-  }
-}
-
-@keyframes speedLine {
-  0% {
-    opacity: 0.5;
-  }
-
-  50% {
-    opacity: 0.9;
-  }
-
-  100% {
-    opacity: 0.3;
-  }
-}
-
-@keyframes orbitSpin {
-  from {
-    transform: rotate(0deg);
-  }
-
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@keyframes djBob {
-  from {
-    transform: translateY(0);
-  }
-
-  to {
-    transform: translateY(-5px);
-  }
-}
-
-@keyframes djArmL {
-  from {
-    transform: rotate(-12deg);
-  }
-
-  to {
-    transform: rotate(8deg);
-  }
-}
-
-@keyframes djArmR {
-  from {
-    transform: rotate(8deg);
-  }
-
-  to {
-    transform: rotate(-12deg);
-  }
-}
-
-@keyframes faderMove {
-  from {
-    transform: translateY(0);
-  }
-
-  to {
-    transform: translateY(8px);
-  }
-}
-
-@keyframes soundWave {
-  0% {
-    transform: scale(0.8);
-    opacity: 0.6;
-  }
-
-  100% {
-    transform: scale(1.4);
-    opacity: 0;
-  }
-}
-
-@keyframes eqBar {
-  from {
-    transform: scaleY(0.3);
-  }
-
-  to {
-    transform: scaleY(1);
-  }
-}
-
-@keyframes shimmerSweep {
-  0% {
-    transform: translateX(-100%);
-  }
-
-  100% {
-    transform: translateX(300%);
+    box-shadow: 0 0 40px rgba(255, 92, 0, 0.6);
   }
 }

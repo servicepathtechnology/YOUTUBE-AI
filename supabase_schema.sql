@@ -60,3 +60,13 @@ CREATE POLICY "Users can delete their own chats" ON chats
 ALTER TABLE videos ADD COLUMN IF NOT EXISTS captions JSONB;
 -- Update language column to store ISO codes ('en', 'hi', 'te') going forward
 -- Existing rows with 'ENGLISH'/'HINDI'/'TELUGU' remain valid; app normalises on read
+
+-- Actify: Add new output columns for 5-tab structure
+ALTER TABLE videos ADD COLUMN IF NOT EXISTS key_insights TEXT[];
+ALTER TABLE videos ADD COLUMN IF NOT EXISTS action_plan TEXT[];
+ALTER TABLE videos ADD COLUMN IF NOT EXISTS mistakes_to_avoid TEXT[];
+
+-- Actify multilang: store all 3 language outputs as JSONB
+ALTER TABLE videos ADD COLUMN IF NOT EXISTS multilang_content JSONB;
+ALTER TABLE videos ADD COLUMN IF NOT EXISTS podcast_urls JSONB;
+ALTER TABLE videos ADD COLUMN IF NOT EXISTS podcast_scripts JSONB;
