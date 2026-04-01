@@ -1,6 +1,6 @@
 ﻿import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
-import { geminiFastModel } from "@/lib/gemini";
+import { geminiFastModel, generateWithRetry } from "@/lib/gemini";
 
 export async function POST(req: Request) {
   try {
@@ -72,8 +72,7 @@ User Question: ${question}
       message: question,
     });
 
-    const result = await geminiFastModel.generateContent(prompt);
-    const answer = result.response.text();
+    const answer = await generateWithRetry(geminiFastModel, prompt);
 
     const { data: chatEntry, error: chatError } = await supabase
       .from("chats")

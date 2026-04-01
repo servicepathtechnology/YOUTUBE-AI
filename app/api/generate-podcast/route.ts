@@ -1,6 +1,6 @@
 ﻿import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
-import { geminiFastModel } from "@/lib/gemini";
+import { geminiFastModel, generateWithRetry } from "@/lib/gemini";
 import { v4 as uuidv4 } from "uuid";
 
 const LANG_CODE: Record<string, string> = {
@@ -39,16 +39,13 @@ ${summary}
 
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
-      const result = await geminiFastModel.generateContent(scriptPrompt);
-      let script = result.response.text();
+      let script = await generateWithRetry(geminiFastModel, scriptPrompt);
       if (script.length > targetChars + 500) {
         script = script.substring(0, targetChars + 500);
       }
       return script;
     } catch (err: any) {
-      const isRetryable =
-        err?.status === 503 || err?.status === 429 ||
-        err?.message?.includes("503") || err?.message?.includes("429");
+      const isRetryable = err?.status === 503 || err?.message?.includes("503");
       if (isRetryable && attempt < 3) {
         await new Promise(r => setTimeout(r, attempt * 2000));
         continue;

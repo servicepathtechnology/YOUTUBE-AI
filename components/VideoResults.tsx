@@ -30,7 +30,6 @@ function parseItems(arr: any[] | null): any[] {
 
 export function VideoResults({ video }: VideoResultsProps) {
   const [activeTab, setActiveTab] = useState<Tab>('summary')
-  const [summaryLength, setSummaryLength] = useState<'2' | '5' | '10'>('2')
   const [checkedSteps, setCheckedSteps] = useState<Set<number>>(new Set())
   const [language, setLanguage] = useState<Lang>(() => {
     if (typeof window !== 'undefined') {
@@ -65,11 +64,6 @@ export function VideoResults({ video }: VideoResultsProps) {
   ]
 
   const getSummaryContent = () => {
-    if (summaryLength === '2') return summary
-    if (summaryLength === '5') {
-      const pts = bulletPoints.slice(0, 5)
-      return summary + (pts.length ? '\n\n' + pts.map(p => `• ${p}`).join('\n') : '')
-    }
     return summary + (bulletPoints.length ? '\n\n' + bulletPoints.map(p => `• ${p}`).join('\n') : '')
   }
 
@@ -87,8 +81,15 @@ export function VideoResults({ video }: VideoResultsProps) {
     if (typeof window !== 'undefined') localStorage.setItem('actify_language', lang)
   }
 
+  const DEFAULT_PODCAST_THUMB = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='176' height='104' viewBox='0 0 176 104'%3E%3Crect width='176' height='104' fill='%231a1a2e'/%3E%3Ccircle cx='88' cy='52' r='28' fill='%23ff5500' opacity='0.15'/%3E%3Ccircle cx='88' cy='52' r='18' fill='%23ff5500' opacity='0.25'/%3E%3Ccircle cx='88' cy='52' r='10' fill='%23ff5500'/%3E%3Crect x='82' y='30' width='12' height='24' rx='6' fill='white'/%3E%3Cpath d='M76 50 Q76 64 88 64 Q100 64 100 50' stroke='white' stroke-width='2.5' fill='none' stroke-linecap='round'/%3E%3Crect x='86' y='64' width='4' height='8' fill='white'/%3E%3Crect x='80' y='72' width='16' height='2.5' rx='1.25' fill='white'/%3E%3C/svg%3E"
+
   const hasMultilang = !!video.multilang_content
   const isYoutube = /(?:youtube\.com|youtu\.be)/i.test(video.video_url || '')
+  const isPodcast = video.source_type === 'podcast' || video.language === 'PODCAST'
+
+  const thumbnailSrc = video.thumbnail
+    || (isYoutube ? `https://img.youtube.com/vi/${video.video_id}/maxresdefault.jpg` : null)
+    || DEFAULT_PODCAST_THUMB
 
   return (
     <div className="min-h-screen bg-bg-primary pt-[64px]">
@@ -103,7 +104,7 @@ export function VideoResults({ video }: VideoResultsProps) {
         {/* Video header card */}
         <div className="bg-bg-card border border-border rounded-2xl p-5 mb-6 flex flex-col sm:flex-row gap-5">
           <img
-            src={video.thumbnail || (isYoutube ? `https://img.youtube.com/vi/${video.video_id}/maxresdefault.jpg` : undefined)}
+            src={thumbnailSrc}
             alt={video.title}
             className="w-full sm:w-44 h-26 object-cover rounded-xl shrink-0"
           />
@@ -173,21 +174,6 @@ export function VideoResults({ video }: VideoResultsProps) {
                 <div className="space-y-6">
                   <div className="flex items-center justify-between flex-wrap gap-3">
                     <h2 className="font-headings text-lg font-bold text-text-primary">📄 Summary</h2>
-                    <div className="flex gap-2">
-                      {(['2', '5', '10'] as const).map(len => (
-                        <button
-                          key={len}
-                          onClick={() => setSummaryLength(len)}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                            summaryLength === len
-                              ? 'bg-accent text-white'
-                              : 'bg-bg-secondary border border-border text-text-muted hover:border-accent/30'
-                          }`}
-                        >
-                          {len} min
-                        </button>
-                      ))}
-                    </div>
                   </div>
 
                   <p className="text-text-secondary font-sans text-[15px] leading-relaxed whitespace-pre-wrap">
@@ -318,8 +304,8 @@ export function VideoResults({ video }: VideoResultsProps) {
               )}
             </div>
 
-            {/* Podcast player — switches with language */}
-            {podcastUrl && (
+            {/* Podcast player — switches with language, hidden for podcast source */}
+            {podcastUrl && !isPodcast && (
               <div className="mt-5">
                 <PodcastPlayer
                   key={language}

@@ -1,6 +1,6 @@
 ﻿import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
-import { geminiFastModel, geminiModel } from "@/lib/gemini";
+import { geminiModel, generateWithRetry } from "@/lib/gemini";
 
 const LANGUAGES = ['ENGLISH', 'HINDI', 'TELUGU'] as const;
 type Lang = typeof LANGUAGES[number];
@@ -58,19 +58,12 @@ Requirements:
 ${contentSource}
 `;
 
-  let result;
+  let responseText: string;
   try {
-    result = await geminiModel.generateContent(prompt);
+    responseText = await generateWithRetry(geminiModel, prompt);
   } catch (err: any) {
-    const isQuota = err?.status === 429 || err?.message?.includes("429");
-    if (isQuota) {
-      result = await geminiFastModel.generateContent(prompt);
-    } else {
-      throw err;
-    }
+    throw err;
   }
-
-  const responseText = result.response.text();
   try {
     const jsonStart = responseText.indexOf('{');
     const jsonEnd = responseText.lastIndexOf('}') + 1;

@@ -45,7 +45,7 @@ interface Props {
   stepProgress: number
   videoUrl?: string
   status?: string
-  sourceType?: 'youtube' | 'article'
+  sourceType?: 'youtube' | 'article' | 'podcast'
   onComplete?: () => void
 }
 
@@ -290,6 +290,13 @@ export function ProcessingScreen({ currentStep, stepProgress, videoUrl, status, 
                 <rect x="3" y="6" width="9" height="1.5" rx="0.75" fill="white" opacity="0.7"/>
                 <rect x="3" y="9" width="10" height="1.5" rx="0.75" fill="white" opacity="0.5"/>
               </svg>
+            ) : sourceType === 'podcast' ? (
+              <svg width="18" height="13" viewBox="0 0 18 13" fill="none">
+                <rect width="18" height="13" rx="3" fill="#f59e0b" />
+                <circle cx="9" cy="6.5" r="2.5" fill="white" opacity="0.9"/>
+                <rect x="8.25" y="9.5" width="1.5" height="2" rx="0.75" fill="white" opacity="0.8"/>
+                <rect x="5.5" y="10.5" width="7" height="1" rx="0.5" fill="white" opacity="0.6"/>
+              </svg>
             ) : (
               <svg width="18" height="13" viewBox="0 0 18 13" fill="none">
                 <rect width="18" height="13" rx="3" fill="#FF0000" />
@@ -314,10 +321,13 @@ export function ProcessingScreen({ currentStep, stepProgress, videoUrl, status, 
       <div style={{ background: "rgba(6,6,14,0.97)", borderTop: "1px solid rgba(255,255,255,0.07)", padding: "20px 22px 24px", display: "flex", flexDirection: "column", gap: 16 }}>
 
         {/* Step cards */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10 }}>
-          {STEPS.map((s, i) => {
-            const isDone = i < step
-            const isActive = i === step
+        <div style={{ display: "grid", gridTemplateColumns: `repeat(${sourceType === 'podcast' ? 3 : 4}, 1fr)`, gap: 10 }}>
+          {STEPS.filter((_, i) => !(sourceType === 'podcast' && i === 2)).map((s, i) => {
+            // For podcast source, skip step index 2 (Podcast card).
+            // Remap so visual index aligns with actual step state.
+            const realIdx = sourceType === 'podcast' && i >= 2 ? i + 1 : i
+            const isDone = realIdx < step
+            const isActive = realIdx === step
             return (
               <div key={i} style={{
                 borderRadius: 14, padding: "14px 12px",
