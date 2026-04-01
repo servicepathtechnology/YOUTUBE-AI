@@ -157,11 +157,33 @@ export async function POST(req: Request) {
       .update({
         podcast_urls: podcastUrls,
         podcast_scripts: podcastScripts,
-        // Keep legacy field pointing to English for backward compat
         podcast_audio_url: enUrl,
         podcast_script: enScript,
       })
       .eq("id", video_id);
+
+    // Insert rows into podcasts table for each generated language
+    const { data: { user } } = await supabase.auth.getUser();
+    const podcastRows = (
+      [
+        { language: "ENGLISH", url: enUrl, script: enScript },
+        { language: "HINDI",   url: hiUrl, script: hiScript },
+        { language: "TELUGU",  url: teUrl, script: teScript },
+      ] as const
+    )
+      .filter(({ url }) => url)
+      .map(({ language, url, script }) => ({
+        video_id,
+        user_id: user?.id,
+        language,
+        audio_url: url,
+        script,
+        duration_minutes: duration,
+      }));
+
+    if (podcastRows.length > 0) {
+      await supabase.from("podcasts").insert(podcastRows);
+    }
 
     return NextResponse.json({ podcast_urls: podcastUrls });
   } catch (error: any) {

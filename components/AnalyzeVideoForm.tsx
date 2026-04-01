@@ -6,6 +6,10 @@ import { Input } from '@/components/ui/input'
 import { Zap, AlertCircle } from 'lucide-react'
 import { ProcessingScreen } from '@/components/ProcessingScreen'
 
+function isYoutubeUrl(url: string) {
+  return /(?:youtube\.com|youtu\.be)/i.test(url)
+}
+
 export function AnalyzeVideoForm() {
   const [url, setUrl] = useState('')
   const [status, setStatus] = useState<string>('idle')
@@ -13,6 +17,7 @@ export function AnalyzeVideoForm() {
   const router = useRouter()
 
   const isProcessing = status !== 'idle' && status !== 'done' && status !== 'error'
+  const sourceType = isYoutubeUrl(url) ? 'youtube' : 'article'
 
   const currentStep = status === 'fetching_transcript' ? 0
     : status === 'generating_summary' ? 1
@@ -80,7 +85,7 @@ export function AnalyzeVideoForm() {
           <div className="flex gap-2">
             <Input
               type="url"
-              placeholder="Paste YouTube URL..."
+              placeholder="Paste YouTube or article URL..."
               value={url}
               onChange={e => setUrl(e.target.value)}
               className="flex-1 h-12 bg-bg-secondary border-border text-text-primary placeholder:text-text-muted font-sans"
@@ -95,7 +100,7 @@ export function AnalyzeVideoForm() {
             </Button>
           </div>
           <p className="text-xs text-text-muted font-sans">
-            Actify generates summary, insights, action plan & podcast in English, Hindi and Telugu automatically.
+            Actify generates summary, insights, action plan &amp; podcast in English, Hindi and Telugu automatically — works with YouTube videos and articles.
           </p>
           {error && (
             <div className="p-3 text-error bg-error/10 border border-error/20 rounded-lg text-sm flex items-center gap-2 font-sans">
@@ -105,7 +110,7 @@ export function AnalyzeVideoForm() {
           )}
         </form>
       ) : (
-        <ProcessingScreen currentStep={currentStep} stepProgress={50} videoUrl={url} />
+        <ProcessingScreen currentStep={currentStep} stepProgress={50} videoUrl={url} sourceType={sourceType} />
       )}
     </div>
   )

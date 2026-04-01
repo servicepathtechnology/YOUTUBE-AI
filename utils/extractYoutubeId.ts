@@ -3,3 +3,7 @@ export function extractYoutubeId(url: string): string | null {
   const match = url.match(regExp);
   return match ? match[1] : null;
 }
+
+export function isYoutubeUrl(url: string): boolean {
+  return /(?:youtube\.com|youtu\.be)/i.test(url);
+}

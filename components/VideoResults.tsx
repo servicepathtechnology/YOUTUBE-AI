@@ -88,6 +88,7 @@ export function VideoResults({ video }: VideoResultsProps) {
   }
 
   const hasMultilang = !!video.multilang_content
+  const isYoutube = /(?:youtube\.com|youtu\.be)/i.test(video.video_url || '')
 
   return (
     <div className="min-h-screen bg-bg-primary pt-[64px]">
@@ -102,7 +103,7 @@ export function VideoResults({ video }: VideoResultsProps) {
         {/* Video header card */}
         <div className="bg-bg-card border border-border rounded-2xl p-5 mb-6 flex flex-col sm:flex-row gap-5">
           <img
-            src={video.thumbnail || `https://img.youtube.com/vi/${video.video_id}/maxresdefault.jpg`}
+            src={video.thumbnail || (isYoutube ? `https://img.youtube.com/vi/${video.video_id}/maxresdefault.jpg` : undefined)}
             alt={video.title}
             className="w-full sm:w-44 h-26 object-cover rounded-xl shrink-0"
           />
@@ -329,7 +330,8 @@ export function VideoResults({ video }: VideoResultsProps) {
             )}
           </div>
 
-          {/* ── RIGHT: video embed ── */}
+          {/* ── RIGHT: video embed (YouTube only) ── */}
+          {isYoutube && (
           <div className="w-full lg:w-[380px] shrink-0">
             <div className="lg:sticky lg:top-24">
               <div className="aspect-video w-full rounded-2xl overflow-hidden border border-border bg-black shadow-elevated">
@@ -345,6 +347,7 @@ export function VideoResults({ video }: VideoResultsProps) {
               </div>
             </div>
           </div>
+          )}
 
         </div>
       </div>

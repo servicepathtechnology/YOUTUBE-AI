@@ -3,12 +3,12 @@ import { useEffect, useRef, useState } from "react"
 
 const STEPS = [
   {
-    name: "Transcript",
+    name: "Content",
     icon: "📄",
     title: "Reading your",
-    accent: "video",
-    sub: "Extracting audio transcript & timestamps",
-    msgs: ["Parsing captions...", "Syncing audio frames...", "Mapping timestamps..."],
+    accent: "content",
+    sub: "Extracting text content",
+    msgs: ["Fetching content...", "Parsing text...", "Preparing data..."],
     lightColor: 0x6366f1,
   },
   {
@@ -45,6 +45,7 @@ interface Props {
   stepProgress: number
   videoUrl?: string
   status?: string
+  sourceType?: 'youtube' | 'article'
   onComplete?: () => void
 }
 
@@ -56,7 +57,7 @@ function statusToStep(s: string): number {
   return 0
 }
 
-export function ProcessingScreen({ currentStep, stepProgress, videoUrl, status, onComplete }: Props) {
+export function ProcessingScreen({ currentStep, stepProgress, videoUrl, status, sourceType, onComplete }: Props) {
   const step = status ? statusToStep(status) : currentStep
   const mountRef = useRef<HTMLDivElement>(null)
   const sceneRef = useRef<any>(null)
@@ -282,12 +283,21 @@ export function ProcessingScreen({ currentStep, stepProgress, videoUrl, status, 
         <div style={{ position: "absolute", top: 0, left: 0, right: 0, padding: "16px 20px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           {/* URL chip */}
           <div style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(0,0,0,0.5)", border: "1px solid rgba(255,255,255,0.1)", backdropFilter: "blur(12px)", borderRadius: 10, padding: "5px 10px" }}>
-            <svg width="18" height="13" viewBox="0 0 18 13" fill="none">
-              <rect width="18" height="13" rx="3" fill="#FF0000" />
-              <polygon points="7,3 14,6.5 7,10" fill="white" />
-            </svg>
+            {sourceType === 'article' ? (
+              <svg width="18" height="13" viewBox="0 0 18 13" fill="none">
+                <rect width="18" height="13" rx="3" fill="#6366f1" />
+                <rect x="3" y="3" width="12" height="1.5" rx="0.75" fill="white" opacity="0.9"/>
+                <rect x="3" y="6" width="9" height="1.5" rx="0.75" fill="white" opacity="0.7"/>
+                <rect x="3" y="9" width="10" height="1.5" rx="0.75" fill="white" opacity="0.5"/>
+              </svg>
+            ) : (
+              <svg width="18" height="13" viewBox="0 0 18 13" fill="none">
+                <rect width="18" height="13" rx="3" fill="#FF0000" />
+                <polygon points="7,3 14,6.5 7,10" fill="white" />
+              </svg>
+            )}
             <span style={{ fontSize: 10.5, color: "rgba(255,255,255,0.45)", maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-              {videoUrl || "youtube.com/watch?v=..."}
+              {videoUrl || (sourceType === 'article' ? 'article url...' : 'youtube.com/watch?v=...')}
             </span>
           </div>
           {/* Processing badge */}

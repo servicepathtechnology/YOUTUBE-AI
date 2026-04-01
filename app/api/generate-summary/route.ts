@@ -8,8 +8,8 @@ type Lang = typeof LANGUAGES[number];
 async function generateForLanguage(transcript: string, title: string, language: Lang) {
   const limitedTranscript = transcript.split(" ").slice(0, 10000).join(" ");
   const contentSource = transcript.length > 0
-    ? `Transcript:\n${limitedTranscript}`
-    : `Video Title: "${title}" (no transcript available — use your knowledge)`;
+    ? `Content:\n${limitedTranscript}`
+    : `Title: "${title}" (no content available — use your knowledge)`;
 
   const prompt = `
 You are an expert content analyzer for Actify, an AI-powered action platform.

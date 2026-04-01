@@ -1,9 +1,12 @@
 from flask import Flask, request, send_file
 import os
+import io
 import re
 import uuid
 import asyncio
 import edge_tts
+
+TEMP_DIR = tempfile.gettempdir()
 
 try:
     from pydub import AudioSegment
@@ -106,7 +109,7 @@ def generate_podcast():
                 continue
 
             cfg = voices[speaker]
-            temp_path = os.path.join(os.getcwd(), f"seg_{uuid.uuid4()}.mp3")
+            temp_path = os.path.join(TEMP_DIR, f"seg_{uuid.uuid4()}.mp3")
             temp_files.append(temp_path)
 
             try:
@@ -126,7 +129,7 @@ def generate_podcast():
             return {"error": "No audio segments generated"}, 500
 
         final_filename = f"podcast_{uuid.uuid4()}.mp3"
-        final_path = os.path.join(os.getcwd(), final_filename)
+        final_path = os.path.join(TEMP_DIR, final_filename)
 
         if PYDUB_AVAILABLE:
             combined = AudioSegment.empty()
@@ -157,7 +160,18 @@ def generate_podcast():
                 pass
 
         if os.path.exists(final_path):
-            return send_file(final_path, mimetype="audio/mpeg", as_attachment=True, download_name="podcast.mp3")
+            with open(final_path, "rb") as f:
+                audio_data = f.read()
+            try:
+                os.remove(final_path)
+            except Exception:
+                pass
+            return send_file(
+                io.BytesIO(audio_data),
+                mimetype="audio/mpeg",
+                as_attachment=True,
+                download_name="podcast.mp3"
+            )
         else:
             return {"error": "Failed to produce final podcast file"}, 500
 

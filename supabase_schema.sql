@@ -70,3 +70,50 @@ ALTER TABLE videos ADD COLUMN IF NOT EXISTS mistakes_to_avoid TEXT[];
 ALTER TABLE videos ADD COLUMN IF NOT EXISTS multilang_content JSONB;
 ALTER TABLE videos ADD COLUMN IF NOT EXISTS podcast_urls JSONB;
 ALTER TABLE videos ADD COLUMN IF NOT EXISTS podcast_scripts JSONB;
+
+-- Article support: track whether the source is a YouTube video or an article URL
+ALTER TABLE videos ADD COLUMN IF NOT EXISTS source_type TEXT DEFAULT 'youtube';
+
+
+-- Podcasts table: stores generated podcast metadata and Supabase Storage URLs
+CREATE TABLE IF NOT EXISTS podcasts (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    video_id UUID REFERENCES videos(id) ON DELETE CASCADE,
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    language TEXT NOT NULL CHECK (language IN ('ENGLISH', 'HINDI', 'TELUGU')),
+    audio_url TEXT NOT NULL,
+    script TEXT,
+    duration_minutes INTEGER,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- RLS for podcasts
+ALTER TABLE podcasts ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can insert their own podcasts" ON podcasts
+    FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can view their own podcasts" ON podcasts
+    FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete their own podcasts" ON podcasts
+    FOR DELETE USING (auth.uid() = user_id);
+
+-- Storage bucket policy for podcasts (run after creating 'podcasts' bucket in Supabase UI)
+-- INSERT policy: authenticated users can upload
+CREATE POLICY "Authenticated users can upload podcasts"
+    ON storage.objects FOR INSERT
+    TO authenticated
+    WITH CHECK (bucket_id = 'podcasts');
+
+-- SELECT policy: authenticated users can read their own uploads
+CREATE POLICY "Authenticated users can read podcasts"
+    ON storage.objects FOR SELECT
+    TO authenticated
+    USING (bucket_id = 'podcasts');
+
+-- DELETE policy: authenticated users can delete their own uploads
+CREATE POLICY "Authenticated users can delete podcasts"
+    ON storage.objects FOR DELETE
+    TO authenticated
+    USING (bucket_id = 'podcasts');
