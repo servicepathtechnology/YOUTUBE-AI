@@ -4,6 +4,7 @@ import io
 import re
 import uuid
 import asyncio
+import tempfile
 import edge_tts
 
 TEMP_DIR = tempfile.gettempdir()
