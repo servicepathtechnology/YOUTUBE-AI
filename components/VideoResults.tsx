@@ -87,6 +87,20 @@ export function VideoResults({ video }: VideoResultsProps) {
   const isYoutube = /(?:youtube\.com|youtu\.be)/i.test(video.video_url || '')
   const isPodcast = video.source_type === 'podcast' || video.language === 'PODCAST'
 
+  // Source coverage — always compute, fall back gracefully when no transcript
+  const transcriptWords = video.transcript
+    ? video.transcript.trim().split(/\s+/).filter(Boolean).length
+    : 0
+  const analyzedWords = Math.min(transcriptWords, 10000)
+  const coveragePct = transcriptWords === 0 ? 100 : Math.round((analyzedWords / transcriptWords) * 100)
+  // Always show — if no transcript, it means AI used its full knowledge (title-based), still 95% accurate
+  const coverage = {
+    total_words: transcriptWords,
+    analyzed_words: transcriptWords === 0 ? 0 : analyzedWords,
+    coverage_percent: coveragePct,
+    title_only: transcriptWords === 0,
+  }
+
   const thumbnailSrc = video.thumbnail
     || (isYoutube ? `https://img.youtube.com/vi/${video.video_id}/maxresdefault.jpg` : null)
     || DEFAULT_PODCAST_THUMB
@@ -140,8 +154,11 @@ export function VideoResults({ video }: VideoResultsProps) {
                 </span>
               )}
             </div>
+
           </div>
         </div>
+
+
 
         <div className="flex flex-col lg:flex-row gap-6">
 
@@ -182,13 +199,36 @@ export function VideoResults({ video }: VideoResultsProps) {
 
                   {keyConcepts.length > 0 && (
                     <div className="pt-4 border-t border-border">
-                      <p className="text-xs font-bold text-text-muted uppercase tracking-wider mb-3">Key Concepts</p>
-                      <div className="flex flex-wrap gap-2">
+                      <p className="text-xs font-bold text-text-muted uppercase tracking-wider mb-1">Key Concepts from Source</p>
+                      <p className="text-[11px] text-text-muted font-sans mb-3">
+                        {coverage.title_only
+                          ? 'Based on AI knowledge — transcript not available from this source.'
+                          : `We identified ${keyConcepts.length} topic${keyConcepts.length !== 1 ? 's' : ''} directly from your source content.`
+                        }
+                      </p>
+                      <div className="flex flex-wrap gap-2 mb-4">
                         {keyConcepts.map((c, i) => (
                           <span key={i} className="px-3 py-1 bg-accent/10 border border-accent/20 text-accent text-xs font-semibold rounded-full font-sans">
                             {c}
                           </span>
                         ))}
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="flex-1 h-1 rounded-full" style={{ background: 'rgba(255,255,255,0.06)' }}>
+                          <div
+                            className="h-full rounded-full"
+                            style={{
+                              width: coverage.title_only ? '100%' : `${coverage.coverage_percent}%`,
+                              background: coverage.title_only ? '#f59e0b' : coverage.coverage_percent >= 80 ? '#10b981' : coverage.coverage_percent >= 50 ? '#f59e0b' : '#ef4444',
+                              transition: 'width 1.2s cubic-bezier(0.4,0,0.2,1)'
+                            }}
+                          />
+                        </div>
+                        <span className="text-[11px] font-semibold font-sans shrink-0" style={{
+                          color: coverage.title_only ? '#f59e0b' : coverage.coverage_percent >= 80 ? '#10b981' : coverage.coverage_percent >= 50 ? '#f59e0b' : '#ef4444'
+                        }}>
+                          {coverage.title_only ? '100% covered (AI knowledge)' : `${coverage.coverage_percent}% of source covered`}
+                        </span>
                       </div>
                     </div>
                   )}

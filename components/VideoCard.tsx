@@ -10,13 +10,22 @@ interface VideoCardProps {
   video: {
     id: string;
     video_id: string;
+    video_url?: string;
     title: string;
+    thumbnail?: string | null;
+    source_type?: string;
     created_at: string;
   }
 }
 
 export function VideoCard({ video }: VideoCardProps) {
   const router = useRouter()
+  const isYoutube = /(?:youtube\.com|youtu\.be)/i.test(video.video_url || '')
+  const thumbnailSrc = video.thumbnail
+    || (isYoutube ? `https://img.youtube.com/vi/${video.video_id}/mqdefault.jpg` : null)
+    || '/file.svg'
+  const sourceLabel = video.source_type === 'podcast' ? 'Podcast'
+    : isYoutube ? 'YouTube Video' : 'Article'
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.preventDefault()
@@ -105,7 +114,7 @@ export function VideoCard({ video }: VideoCardProps) {
         {/* Left: Thumbnail */}
         <div className="relative w-24 h-14 sm:w-20 sm:h-14 shrink-0 rounded-[6px] bg-bg-secondary overflow-hidden border border-border group-hover:border-accent/20 transition-colors">
           <img 
-            src={`https://img.youtube.com/vi/${video.video_id}/mqdefault.jpg`} 
+            src={thumbnailSrc}
             alt={video.title} 
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
           />
@@ -118,7 +127,7 @@ export function VideoCard({ video }: VideoCardProps) {
             {video.title}
           </h4>
           <div className="flex items-center gap-3">
-            <span className="text-[11px] text-text-muted font-medium uppercase tracking-wider">YouTube Video</span>
+            <span className="text-[11px] text-text-muted font-medium uppercase tracking-wider">{sourceLabel}</span>
             <div className="w-1 h-1 rounded-full bg-border"></div>
             <span className="text-[11px] text-text-muted">
               {new Date(video.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}

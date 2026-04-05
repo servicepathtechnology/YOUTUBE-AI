@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS videos (
     podcast_audio_url TEXT,
     podcast_script TEXT,
     language TEXT DEFAULT 'ENGLISH',
+    source_coverage JSONB,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 

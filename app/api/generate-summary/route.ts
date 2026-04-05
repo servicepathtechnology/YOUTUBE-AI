@@ -5,6 +5,13 @@ import { geminiModel, generateWithRetry } from "@/lib/gemini";
 const LANGUAGES = ['ENGLISH', 'HINDI', 'TELUGU'] as const;
 type Lang = typeof LANGUAGES[number];
 
+export function calcCoverage(transcript: string) {
+  const totalWords = transcript.trim() === "" ? 0 : transcript.trim().split(/\s+/).length;
+  const analyzedWords = Math.min(totalWords, 10000);
+  const percent = totalWords === 0 ? 0 : Math.round((analyzedWords / totalWords) * 100);
+  return { total_words: totalWords, analyzed_words: analyzedWords, coverage_percent: percent };
+}
+
 async function generateForLanguage(transcript: string, title: string, language: Lang) {
   const limitedTranscript = transcript.split(" ").slice(0, 10000).join(" ");
   const contentSource = transcript.length > 0
@@ -97,11 +104,17 @@ export async function POST(req: Request) {
 
     // Return cached multilang data if already generated
     if (video.multilang_content) {
-      return NextResponse.json({ multilang_content: video.multilang_content });
+      // Backfill source_coverage if missing
+      if (!video.source_coverage && video.transcript) {
+        const coverage = calcCoverage(video.transcript)
+        await supabase.from("videos").update({ source_coverage: coverage }).eq("id", video_id)
+      }
+      return NextResponse.json({ multilang_content: video.multilang_content, source_coverage: video.source_coverage });
     }
 
     const transcript = video.transcript || "";
     const title = video.title || "this video";
+    const coverage = calcCoverage(transcript);
 
     // Generate all 3 languages in parallel
     const [english, hindi, telugu] = await Promise.all([
@@ -117,6 +130,7 @@ export async function POST(req: Request) {
       .from("videos")
       .update({
         multilang_content: multilangContent,
+        source_coverage: coverage,
         summary: english.summary,
         bullet_points: english.bullet_points,
         key_concepts: english.key_concepts,
@@ -126,7 +140,7 @@ export async function POST(req: Request) {
       })
       .eq("id", video_id);
 
-    return NextResponse.json({ multilang_content: multilangContent });
+    return NextResponse.json({ multilang_content: multilangContent, source_coverage: coverage });
   } catch (error: any) {
     console.error("Generate Summary Error:", error);
     return NextResponse.json({ error: error.message || "Failed to generate summary" }, { status: 500 });
