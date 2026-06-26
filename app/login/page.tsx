@@ -27,10 +27,6 @@ export default function LoginPage() {
     })
 
     if (error) {
-      if (error.message === 'Email not confirmed') {
-        router.push(`/verify?email=${email}`)
-        return
-      }
       setError(error.message)
       setLoading(false)
     } else {
